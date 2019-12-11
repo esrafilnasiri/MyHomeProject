@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using app.Models;
+using System.Net.Http;
 
 namespace app.Controllers
 {
@@ -18,10 +19,18 @@ namespace app.Controllers
             _logger = logger;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+
+            var url = "https://www.sahamyab.com/api/proxy/symbol/treeMap?v=0.1&type=volume&market=1,2,4&sector=&timeFrame=day&mini=false&date=1398/09/20&";
+            var client = new HttpClient();
+            var uri = new Uri(url);
+            string response = await client.GetStringAsync(uri);
+
+            ViewBag.Data = response;
             return View();
         }
+
 
         public IActionResult Privacy()
         {
