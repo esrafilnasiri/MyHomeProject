@@ -14,6 +14,7 @@ using System.Text;
 using System.Globalization;
 using OfficeOpenXml.Style;
 using System.Drawing;
+using System.Net;
 
 namespace app.Controllers
 {
@@ -28,6 +29,31 @@ namespace app.Controllers
 
         public async Task<IActionResult> Index()
         {
+            ////var marketNametest = "فسا";
+            //string searchMarketURLb = $"http://www.tsetmc.com/tsev2/data/instinfodata.aspx?i=318005355896147&c=41+";
+            ////searchMarketURL = "http://www.tsetmc.com/tsev2/data/instinfofast.aspx?i=46752599569017089&c=31+";
+            //var handlerb = new HttpClientHandler();
+            //handlerb.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+            //var clientb= new HttpClient(handlerb);
+            ////var uri = new Uri(searchMarketURL);
+            //var search = await clientb.GetStringAsync(searchMarketURLb);
+            //var datac = search.Split(';');
+            //var a = datac[0];
+            //foreach (var itemb in datac)
+            //{
+            //    var datad = itemb.Split(',');
+            //    var d = datad[0];
+            //    var e = datad[1];
+            //}
+            //var c = datac[0];
+
+
+
+
+
+
+
+
             string sFileName = @"market.xlsx";
             string exResult = "marketResult.xlsx";
             FileInfo file = new FileInfo(sFileName);
@@ -89,21 +115,24 @@ namespace app.Controllers
                             //resultSheet.Cells[resultCurrentRowIndex, col].Style.Fill.PatternColor.SetColor(this.GetExcelColor(mainSheet.Cells[row, col + 1].Style.Fill.PatternColor));
                             //resultSheet.Cells[resultCurrentRowIndex, col].Style.Fill.PatternColor.SetColor(Color.Green);
                         }
-                        string searchMarketURL = $"http://tsetmc.com/tsev2/data/search.aspx?skey={marketName}";
-                        searchMarketURL = "http://www.tsetmc.com/tsev2/data/instinfofast.aspx?i=46752599569017089&c=31+";
-                        var client = new HttpClient();
-                        var uri = new Uri(searchMarketURL);
-                        var res = await client.GetAsync(uri);
-                        var vv = res.Content.ReadAsStringAsync().Result;
-                        //string searchResult = Encoding.UTF8.GetString(res);
-                        //var splitResult = searchResult.Split(',');
+                        //string searchMarketURL = $"http://tsetmc.com/tsev2/data/search.aspx?skey={marketName}";
+                        var handler = new HttpClientHandler();
+                        handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+                        var client = new HttpClient(handler);
+                        //var findNameResult = await client.GetStringAsync(searchMarketURL);
+                        //var findedItems = findNameResult.Split(';');
+                        //var marketId=findedItems.Where(n => n.Split(',')[0] == marketName).Select(n => n.Split(',')[2]);
+
+                        //string marketOnlineInfoUrl = $"http://www.tsetmc.com/tsev2/data/instinfodata.aspx?i={marketId}&c=41+";
+                        //var marketOnlineInfo = await client.GetStringAsync(marketOnlineInfoUrl);
+
 
                         try
                         {
 
                             var stockwatch = $"https://www.sahamyab.com/api/proxy/symbol/getSymbolExtData?v=0.1&code={marketName}&stockWatch=1&";
-                            uri = new Uri(stockwatch);
-                            var sahamyabData = await client.GetStringAsync(uri);
+                            //uri = new Uri(stockwatch);
+                            var sahamyabData = await client.GetStringAsync(stockwatch);
                             var sahamyabmarketinfo = Newtonsoft.Json.JsonConvert.DeserializeObject<SahamyabMarketInfo>(sahamyabData);
                             resultSheet.Cells[resultCurrentRowIndex, 23].Value = sahamyabmarketinfo.result[0].sahamayb_post_count;
                             resultSheet.Cells[resultCurrentRowIndex, 24].Value = sahamyabmarketinfo.result[0].sahamayb_post_count_rank;
