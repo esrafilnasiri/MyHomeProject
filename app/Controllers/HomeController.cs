@@ -129,6 +129,9 @@ namespace app.Controllers
 
                         try
                         {
+                            marketName= marketName.Replace('ك', 'ک');
+                            marketName = marketName.Replace('ي', 'ی');
+                            
 
                             var stockwatch = $"https://www.sahamyab.com/api/proxy/symbol/getSymbolExtData?v=0.1&code={marketName}&stockWatch=1&";
                             //uri = new Uri(stockwatch);
@@ -162,7 +165,8 @@ namespace app.Controllers
                         }
                         catch (Exception ex)
                         {
-
+                            var error = ex.Message;
+                            var fullerror = ex.ToString();
                         }
 
                     }
