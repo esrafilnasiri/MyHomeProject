@@ -15,6 +15,7 @@ using System.Globalization;
 using OfficeOpenXml.Style;
 using System.Drawing;
 using System.Net;
+using OfficeOpenXml.Drawing.Chart;
 
 namespace app.Controllers
 {
@@ -27,8 +28,154 @@ namespace app.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
+            return View();
+        }
+
+        //public async Task<IActionResult> Index() {
+        //       var ew= await Index1();
+        //    return View();
+        //}
+
+
+        public async Task<IActionResult> FromTseTmc(string Option)
+        {
+            try
+            {
+                string getTsemcExcelURL = "http://members.tsetmc.com/tsev2/excel/MarketWatchPlus.aspx?d=0";
+                var client = new HttpClient();
+
+
+                var handler = new HttpClientHandler();
+                handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+                client = new HttpClient(handler);
+
+                var downloadedExcel = await client.GetByteArrayAsync(getTsemcExcelURL);
+                Stream stream = new MemoryStream(downloadedExcel);
+
+                using (ExcelPackage marketExcel = new ExcelPackage(stream))
+                {
+                    string exResult = "marketResult.xlsx";
+                    FileInfo fileResult = new FileInfo(exResult);
+                    using (ExcelPackage result = new ExcelPackage(fileResult))
+                    {
+                        var mainSheet = marketExcel.Workbook.Worksheets.Where(n => n.Name == "دیده بان بازار").FirstOrDefault();
+                        int rowCount = mainSheet.Dimension.Rows;
+                        int ColCount = mainSheet.Dimension.Columns;
+                        for (int row = 4; row <= rowCount; row++)
+                        {
+                            var marketName = mainSheet.Cells[row, 1].Value.ToString();
+                            if (string.IsNullOrEmpty(marketName) || marketName.Any(c => char.IsDigit(c)) || marketName.EndsWith('ح'))
+                                continue;
+
+                            var resultSheet = result.Workbook.Worksheets.Where(n => n.Name == marketName).FirstOrDefault();
+                            if (resultSheet == null)
+                            {
+                                throw new Exception("new market added");
+                            }
+                            var resultCurrentRowIndex = resultSheet.Dimension.Rows + 1;
+                            resultSheet.Cells[resultCurrentRowIndex, 1].Value = this.GetCurrentDate();
+                            for (int col = 2; col <= 22; col++)
+                            {
+                                resultSheet.Cells[resultCurrentRowIndex, col].Value = mainSheet.Cells[row, col + 1].Value;
+                            }
+
+                            //var handler = new HttpClientHandler();
+                            //handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+                            //client = new HttpClient(handler);
+                            string searchMarketURL = $"http://tsetmc.com/tsev2/data/search.aspx?skey={marketName}";
+                            var findNameResult = await client.GetStringAsync(searchMarketURL);
+                            var findedItems = findNameResult.Split(';');
+                            var marketId = findedItems.Where(n => n.Split(',')[0] == marketName).Select(n => n.Split(',')[2]).First().ToString();
+
+
+                            string marketOnlineInfoUrl = $"http://www.tsetmc.com/tsev2/data/instinfodata.aspx?i={marketId}&c=41+";
+                            var marketOnlineInfo = await client.GetStringAsync(marketOnlineInfoUrl);
+                            var marketOnlineSplitInfo = marketOnlineInfo.Split(';');
+                            var hogogiInfo = marketOnlineSplitInfo[4].Split(',');
+                            if (hogogiInfo.Length == 10)
+                            {
+                                var hogogiSeal = hogogiInfo[4];
+                                var hogogiBay = hogogiInfo[1];
+                                var hagigiBay = hogogiInfo[0];
+                                var hagigiSeal = hogogiInfo[3];
+                                var mainInfo = marketOnlineSplitInfo[0].Split(',');
+                                var hagmKol = mainInfo[9];
+                                var mablagKol = mainInfo[10];
+                                resultSheet.Cells[resultCurrentRowIndex, 48].Value = double.Parse(hogogiSeal);
+                                resultSheet.Cells[resultCurrentRowIndex, 49].Value = double.Parse(hogogiBay);
+                                resultSheet.Cells[resultCurrentRowIndex, 50].Value = double.Parse(hagigiBay);
+                                resultSheet.Cells[resultCurrentRowIndex, 51].Value = double.Parse(hagigiSeal);
+                                resultSheet.Cells[resultCurrentRowIndex, 52].Value = double.Parse(hagmKol);
+                                resultSheet.Cells[resultCurrentRowIndex, 53].Value = double.Parse(mablagKol);
+
+                            }
+                            else
+                            {
+
+
+                            }
+
+                            //try
+                            //{
+                            //    marketName = marketName.Replace('ك', 'ک');
+                            //    marketName = marketName.Replace('ي', 'ی');
+
+
+                            //    var stockwatch = $"https://www.sahamyab.com/api/proxy/symbol/getSymbolExtData?v=0.1&code={marketName}&stockWatch=1&";
+                            //    //uri = new Uri(stockwatch);
+                            //    var sahamyabData = await client.GetStringAsync(stockwatch);
+                            //    var sahamyabmarketinfo = Newtonsoft.Json.JsonConvert.DeserializeObject<SahamyabMarketInfo>(sahamyabData);
+                            //    resultSheet.Cells[resultCurrentRowIndex, 23].Value = sahamyabmarketinfo.result[0].sahamayb_post_count;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 24].Value = sahamyabmarketinfo.result[0].sahamayb_post_count_rank;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 25].Value = sahamyabmarketinfo.result[0].sahamyab_follower_count_rank;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 26].Value = sahamyabmarketinfo.result[0].sahamyab_page_visit_rank;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 27].Value = sahamyabmarketinfo.result[0].marketValueRank;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 28].Value = sahamyabmarketinfo.result[0].marketValueRankGroup;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 29].Value = sahamyabmarketinfo.result[0].index_affect;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 30].Value = sahamyabmarketinfo.result[0].index_affect_rank;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 31].Value = sahamyabmarketinfo.result[0].correlation_dollar;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 32].Value = sahamyabmarketinfo.result[0].correlation_main_index;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 33].Value = sahamyabmarketinfo.result[0].correlation_oil_opec;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 34].Value = sahamyabmarketinfo.result[0].correlation_ons_tala;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 35].Value = sahamyabmarketinfo.result[0].monthProfitRank;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 36].Value = sahamyabmarketinfo.result[0].monthProfitRankGroup;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 37].Value = sahamyabmarketinfo.result[0].PE;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 38].Value = sahamyabmarketinfo.result[0].sectorPE;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 39].Value = sahamyabmarketinfo.result[0].profit7Days;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 40].Value = sahamyabmarketinfo.result[0].profit30Days;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 41].Value = sahamyabmarketinfo.result[0].profit91Days;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 42].Value = sahamyabmarketinfo.result[0].profit182Days;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 43].Value = sahamyabmarketinfo.result[0].profit365Days;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 44].Value = sahamyabmarketinfo.result[0].profitAllDays;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 45].Value = sahamyabmarketinfo.result[0].tradeVolumeRank;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 46].Value = sahamyabmarketinfo.result[0].tradeVolumeRankGroup;
+                            //    resultSheet.Cells[resultCurrentRowIndex, 47].Value = sahamyabmarketinfo.result[0].zaribNaghdShavandegi;
+                            //}
+                            //catch (Exception ex)
+                            //{
+                            //    var error = ex.Message;
+                            //    var fullerror = ex.ToString();
+                            //}
+
+                        }
+                        result.Save();
+                    }
+                }
+                return Json(new { Success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Success = false, Message = ex.ToString() });
+            }
+        }
+
+        public async Task<IActionResult> Index1()
+        {
+
+            //this.CreateChart();
+            //return View();
             ////var marketNametest = "فسا";
             //string searchMarketURLb = $"http://www.tsetmc.com/tsev2/data/instinfodata.aspx?i=318005355896147&c=41+";
             ////searchMarketURL = "http://www.tsetmc.com/tsev2/data/instinfofast.aspx?i=46752599569017089&c=31+";
@@ -172,7 +319,7 @@ namespace app.Controllers
                     }
                     result.Save();
                 }
-            }
+           }
 
 
 
@@ -253,6 +400,82 @@ namespace app.Controllers
             return View();
         }
 
+        private void CreateChart()
+        {
+            string exResult = "marketResult.xlsx";
+            FileInfo fileResult = new FileInfo(exResult);
+
+            using (ExcelPackage result = new ExcelPackage(fileResult))
+            {
+                var mainChart = result.Workbook.Worksheets.Where(n => n.Name == "Charts").FirstOrDefault();
+                var excelWorksheet = result.Workbook.Worksheets.Where(n => n.Name == "فسا").FirstOrDefault();
+                ExcelChart visitRank= (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
+                if(visitRank==null)
+                    visitRank = mainChart.Drawings.AddChart("SahamyabVisitRank", eChartType.Line);
+
+                while (visitRank.Series.Count>0)
+                {
+                    visitRank.Series.Delete(0);
+                }
+
+
+
+
+                var oldChart =mainChart.Drawings.Where(n => n.Name == "chart1").FirstOrDefault();
+                if (oldChart != null)
+                    mainChart.Drawings.Remove(oldChart);
+                var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
+
+                string firstxSeries = excelWorksheet.Name;
+                foreach (var item in result.Workbook.Worksheets.Where(n=>n.Name!="Charts"))
+                {
+                    bool canInsert = false;
+                    bool canInsertVisitRank = false;
+                    for (int i = 2; i <= 6; i++)
+                    {
+                        int postCount = int.Parse((item.Cells[$"W{i}"].Value??"0").ToString());
+                        if (postCount > 100)
+                        {
+                            canInsert = true;
+                            //break;
+                        }
+
+                        int visitCount = int.Parse((item.Cells[$"Z{i}"].Value ?? "1000").ToString());
+                        if (visitCount < 200)
+                        {
+                            canInsertVisitRank = true;
+                            //break;
+                        }
+
+
+                    }
+                    if (canInsert)
+                    {
+                        var series1 = diagram.Series.Add($"{item.Name}!W2:W6", $"{firstxSeries}!A2:A6");
+                        series1.Header = item.Name;
+                    }
+
+                    if (canInsertVisitRank)
+                    {
+                        var series1 = visitRank.Series.Add($"{item.Name}!Z2:Z6", $"{firstxSeries}!A2:A6");
+                        series1.Header = item.Name;
+                    }
+                }
+
+                visitRank.Title.Text = "رتبه بازدید";
+                diagram.Title.Text = "تعداد پست سهام یاب";
+                //var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
+                //for (int i = 1; i <= 6; i++)
+                //{
+                //    var series = diagram.Series.Add("فسا!" + $"B{i}:C{i}", "B1:C1");
+                //    //var series = diagram.Series.Add( $"B{i}:C{i}", "B1:C1");
+                //    series.Header = excelWorksheet.Cells[$"A{i}"].Value.ToString();
+                //}
+                diagram.Border.Fill.Color = System.Drawing.Color.Green;
+                result.Save();
+            }
+        }
+
         private Color GetExcelColor(ExcelColor backgroundColor)
         {
             System.Drawing.Color CurrentCellColor = System.Drawing.ColorTranslator.FromHtml(backgroundColor.LookupColor());
@@ -263,7 +486,7 @@ namespace app.Controllers
         {
             var d = DateTime.Now;
             PersianCalendar pc = new PersianCalendar();
-            return string.Format("{0}/{1}/{2}", pc.GetYear(d), pc.GetMonth(d), pc.GetDayOfMonth(d));
+            return string.Format("{0}/{1}/{2}", pc.GetYear(d), pc.GetMonth(d).ToString().PadLeft(2, '0'), pc.GetDayOfMonth(d).ToString().PadLeft(2,'0'));
         }
 
         public IActionResult Privacy()
