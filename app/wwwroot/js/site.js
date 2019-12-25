@@ -46,5 +46,28 @@ $('#btncharts').on('click', function (e) {
             alert("An error has occured!!!");
         }
     });
+});
 
+
+$('#btnSahamyab').on('click', function (e) {
+
+    e.preventDefault();
+    $.ajax({
+        url: "/Home/FromSahamyab",
+        type: "POST",
+        data: JSON.stringify({ 'Options': 'null' }),
+        dataType: "json",
+        traditional: true,
+        contentType: "application/json; charset=utf-8",
+        success: function (data) {
+            if (data.success) {
+                alert("Done");
+            } else {
+                alert("Error occurs on the Database level!");
+            }
+        },
+        error: function () {
+            alert("An error has occured!!!");
+        }
+    });
 });

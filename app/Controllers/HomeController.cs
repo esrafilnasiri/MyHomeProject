@@ -44,12 +44,9 @@ namespace app.Controllers
             try
             {
                 string getTsemcExcelURL = "http://members.tsetmc.com/tsev2/excel/MarketWatchPlus.aspx?d=0";
-                var client = new HttpClient();
-
-
                 var handler = new HttpClientHandler();
                 handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
-                client = new HttpClient(handler);
+                var client = new HttpClient(handler);
 
                 var downloadedExcel = await client.GetByteArrayAsync(getTsemcExcelURL);
                 Stream stream = new MemoryStream(downloadedExcel);
@@ -171,6 +168,71 @@ namespace app.Controllers
             }
         }
 
+        public async Task<IActionResult> FromSahamyab(string Option)
+        {
+            try
+            {
+                string exResult = "marketResult.xlsx";
+                FileInfo fileResult = new FileInfo(exResult);
+                using (ExcelPackage result = new ExcelPackage(fileResult))
+                {
+                    int resultCurrentRowIndex = 10;
+                    foreach (var resultSheet in result.Workbook.Worksheets)
+                    {
+                        var marketName = resultSheet.Name;
+                        if (marketName == "Charts")
+                            continue;
+                        marketName = marketName.Replace('ك', 'ک');
+                        marketName = marketName.Replace('ي', 'ی');
+
+                        var shamyabURL = $"https://www.sahamyab.com/api/proxy/symbol/getSymbolExtData?v=0.1&code={marketName}&stockWatch=1&";
+                        var handler = new HttpClientHandler();
+                        handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+                        var client = new HttpClient(handler);
+                        var sahamyabData = await client.GetStringAsync(shamyabURL);
+                        var sahamyabmarketinfo = Newtonsoft.Json.JsonConvert.DeserializeObject<SahamyabMarketInfo>(sahamyabData);
+                        resultSheet.Cells[resultCurrentRowIndex, 23].Value = sahamyabmarketinfo.result[0].sahamayb_post_count;
+                        resultSheet.Cells[resultCurrentRowIndex, 24].Value = sahamyabmarketinfo.result[0].sahamayb_post_count_rank;
+                        resultSheet.Cells[resultCurrentRowIndex, 25].Value = sahamyabmarketinfo.result[0].sahamyab_follower_count_rank;
+                        resultSheet.Cells[resultCurrentRowIndex, 26].Value = sahamyabmarketinfo.result[0].sahamyab_page_visit_rank;
+                        resultSheet.Cells[resultCurrentRowIndex, 27].Value = sahamyabmarketinfo.result[0].marketValueRank;
+                        resultSheet.Cells[resultCurrentRowIndex, 28].Value = sahamyabmarketinfo.result[0].marketValueRankGroup;
+                        resultSheet.Cells[resultCurrentRowIndex, 29].Value = sahamyabmarketinfo.result[0].index_affect;
+                        resultSheet.Cells[resultCurrentRowIndex, 30].Value = sahamyabmarketinfo.result[0].index_affect_rank;
+                        resultSheet.Cells[resultCurrentRowIndex, 31].Value = sahamyabmarketinfo.result[0].correlation_dollar;
+                        resultSheet.Cells[resultCurrentRowIndex, 32].Value = sahamyabmarketinfo.result[0].correlation_main_index;
+                        resultSheet.Cells[resultCurrentRowIndex, 33].Value = sahamyabmarketinfo.result[0].correlation_oil_opec;
+                        resultSheet.Cells[resultCurrentRowIndex, 34].Value = sahamyabmarketinfo.result[0].correlation_ons_tala;
+                        resultSheet.Cells[resultCurrentRowIndex, 35].Value = sahamyabmarketinfo.result[0].monthProfitRank;
+                        resultSheet.Cells[resultCurrentRowIndex, 36].Value = sahamyabmarketinfo.result[0].monthProfitRankGroup;
+                        resultSheet.Cells[resultCurrentRowIndex, 37].Value = sahamyabmarketinfo.result[0].PE;
+                        resultSheet.Cells[resultCurrentRowIndex, 38].Value = sahamyabmarketinfo.result[0].sectorPE;
+                        resultSheet.Cells[resultCurrentRowIndex, 39].Value = sahamyabmarketinfo.result[0].profit7Days;
+                        resultSheet.Cells[resultCurrentRowIndex, 40].Value = sahamyabmarketinfo.result[0].profit30Days;
+                        resultSheet.Cells[resultCurrentRowIndex, 41].Value = sahamyabmarketinfo.result[0].profit91Days;
+                        resultSheet.Cells[resultCurrentRowIndex, 42].Value = sahamyabmarketinfo.result[0].profit182Days;
+                        resultSheet.Cells[resultCurrentRowIndex, 43].Value = sahamyabmarketinfo.result[0].profit365Days;
+                        resultSheet.Cells[resultCurrentRowIndex, 44].Value = sahamyabmarketinfo.result[0].profitAllDays;
+                        resultSheet.Cells[resultCurrentRowIndex, 45].Value = sahamyabmarketinfo.result[0].tradeVolumeRank;
+                        resultSheet.Cells[resultCurrentRowIndex, 46].Value = sahamyabmarketinfo.result[0].tradeVolumeRankGroup;
+                        resultSheet.Cells[resultCurrentRowIndex, 47].Value = sahamyabmarketinfo.result[0].zaribNaghdShavandegi;
+                    }
+                    result.Save();
+
+                    return Json(new { Success = true });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    Success = false,
+                    Message = ex.ToString()
+                });
+            }
+        }
+
+
         public IActionResult CreateChart()
         {
             try
@@ -289,9 +351,9 @@ namespace app.Controllers
 
                         try
                         {
-                            marketName= marketName.Replace('ك', 'ک');
+                            marketName = marketName.Replace('ك', 'ک');
                             marketName = marketName.Replace('ي', 'ی');
-                            
+
 
                             var stockwatch = $"https://www.sahamyab.com/api/proxy/symbol/getSymbolExtData?v=0.1&code={marketName}&stockWatch=1&";
                             //uri = new Uri(stockwatch);
@@ -332,7 +394,7 @@ namespace app.Controllers
                     }
                     result.Save();
                 }
-           }
+            }
 
 
 
@@ -369,7 +431,7 @@ namespace app.Controllers
 
             //    package.Save(); //Save the workbook.
             //}
-            
+
 
 
 
@@ -491,17 +553,17 @@ namespace app.Controllers
             }
         }
 
-        private Color GetExcelColor(ExcelColor backgroundColor)
-        {
-            System.Drawing.Color CurrentCellColor = System.Drawing.ColorTranslator.FromHtml(backgroundColor.LookupColor());
-            return CurrentCellColor;
-        }
+        //private Color GetExcelColor(ExcelColor backgroundColor)
+        //{
+        //    System.Drawing.Color CurrentCellColor = System.Drawing.ColorTranslator.FromHtml(backgroundColor.LookupColor());
+        //    return CurrentCellColor;
+        //}
 
         private string GetCurrentDate()
         {
             var d = DateTime.Now;
             PersianCalendar pc = new PersianCalendar();
-            return string.Format("{0}/{1}/{2}", pc.GetYear(d), pc.GetMonth(d).ToString().PadLeft(2, '0'), pc.GetDayOfMonth(d).ToString().PadLeft(2,'0'));
+            return string.Format("{0}/{1}/{2}", pc.GetYear(d), pc.GetMonth(d).ToString().PadLeft(2, '0'), pc.GetDayOfMonth(d).ToString().PadLeft(2, '0'));
         }
 
         public IActionResult Privacy()
