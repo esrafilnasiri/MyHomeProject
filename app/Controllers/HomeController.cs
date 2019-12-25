@@ -171,6 +171,19 @@ namespace app.Controllers
             }
         }
 
+        public IActionResult CreateChart()
+        {
+            try
+            {
+                this.DoCreateChart();
+                return Json(new { Success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Success = false, Message = ex.ToString() });
+            }
+        }
+
         public async Task<IActionResult> Index1()
         {
 
@@ -400,7 +413,7 @@ namespace app.Controllers
             return View();
         }
 
-        private void CreateChart()
+        private void DoCreateChart()
         {
             string exResult = "marketResult.xlsx";
             FileInfo fileResult = new FileInfo(exResult);
@@ -409,11 +422,11 @@ namespace app.Controllers
             {
                 var mainChart = result.Workbook.Worksheets.Where(n => n.Name == "Charts").FirstOrDefault();
                 var excelWorksheet = result.Workbook.Worksheets.Where(n => n.Name == "فسا").FirstOrDefault();
-                ExcelChart visitRank= (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
-                if(visitRank==null)
+                ExcelChart visitRank = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
+                if (visitRank == null)
                     visitRank = mainChart.Drawings.AddChart("SahamyabVisitRank", eChartType.Line);
 
-                while (visitRank.Series.Count>0)
+                while (visitRank.Series.Count > 0)
                 {
                     visitRank.Series.Delete(0);
                 }
@@ -421,19 +434,21 @@ namespace app.Controllers
 
 
 
-                var oldChart =mainChart.Drawings.Where(n => n.Name == "chart1").FirstOrDefault();
+                var oldChart = mainChart.Drawings.Where(n => n.Name == "chart1").FirstOrDefault();
                 if (oldChart != null)
                     mainChart.Drawings.Remove(oldChart);
                 var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
 
                 string firstxSeries = excelWorksheet.Name;
-                foreach (var item in result.Workbook.Worksheets.Where(n=>n.Name!="Charts"))
+                foreach (var item in result.Workbook.Worksheets.Where(n => n.Name != "Charts"))
                 {
                     bool canInsert = false;
                     bool canInsertVisitRank = false;
-                    for (int i = 2; i <= 6; i++)
+                    int max = item.Dimension.Rows;
+                    int min = System.Math.Max(2, max - 30);
+                    for (int i = min; i <= max; i++)
                     {
-                        int postCount = int.Parse((item.Cells[$"W{i}"].Value??"0").ToString());
+                        int postCount = int.Parse((item.Cells[$"W{i}"].Value ?? "0").ToString());
                         if (postCount > 100)
                         {
                             canInsert = true;
@@ -451,13 +466,13 @@ namespace app.Controllers
                     }
                     if (canInsert)
                     {
-                        var series1 = diagram.Series.Add($"{item.Name}!W2:W6", $"{firstxSeries}!A2:A6");
+                        var series1 = diagram.Series.Add($"{item.Name}!W{min}:W{max}", $"{firstxSeries}!A{min}:A{max}");
                         series1.Header = item.Name;
                     }
 
                     if (canInsertVisitRank)
                     {
-                        var series1 = visitRank.Series.Add($"{item.Name}!Z2:Z6", $"{firstxSeries}!A2:A6");
+                        var series1 = visitRank.Series.Add($"{item.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
                         series1.Header = item.Name;
                     }
                 }
