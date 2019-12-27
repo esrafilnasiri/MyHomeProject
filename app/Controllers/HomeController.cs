@@ -33,10 +33,11 @@ namespace app.Controllers
             return View();
         }
 
-        //public async Task<IActionResult> Index() {
-        //       var ew= await Index1();
-        //    return View();
-        //}
+        public async Task<IActionResult> IndexOld()
+        {
+            var ew = await Index1x();
+            return View();
+        }
 
 
         public async Task<IActionResult> FromTseTmc(string Option)
@@ -246,7 +247,7 @@ namespace app.Controllers
             }
         }
 
-        public async Task<IActionResult> Index1()
+        public async Task<IActionResult> Index1x()
         {
 
             //this.CreateChart();
@@ -276,7 +277,7 @@ namespace app.Controllers
 
 
 
-            string sFileName = @"market.xlsx";
+            string sFileName = @"MarketWatchPlus.xlsx";
             string exResult = "marketResult.xlsx";
             FileInfo file = new FileInfo(sFileName);
             FileInfo fileResult = new FileInfo(exResult);
@@ -293,7 +294,7 @@ namespace app.Controllers
                     for (int row = 4; row <= rowCount; row++)
                     {
                         var marketName = mainSheet.Cells[row, 1].Value.ToString();
-                        if (string.IsNullOrEmpty(marketName) || marketName.Any(c => char.IsDigit(c)))
+                        if (string.IsNullOrEmpty(marketName) || marketName.Any(c => char.IsDigit(c)) || marketName.EndsWith('ح'))
                             continue;
                         var resultSheet = result.Workbook.Worksheets.Where(n => n.Name == marketName).FirstOrDefault();
                         if (resultSheet == null)
@@ -485,13 +486,15 @@ namespace app.Controllers
                 var mainChart = result.Workbook.Worksheets.Where(n => n.Name == "Charts").FirstOrDefault();
                 var excelWorksheet = result.Workbook.Worksheets.Where(n => n.Name == "فسا").FirstOrDefault();
                 ExcelChart visitRank = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
-                if (visitRank == null)
-                    visitRank = mainChart.Drawings.AddChart("SahamyabVisitRank", eChartType.Line);
+                if (visitRank != null)
+                    mainChart.Drawings.Remove(visitRank);
 
-                while (visitRank.Series.Count > 0)
-                {
-                    visitRank.Series.Delete(0);
-                }
+                visitRank = mainChart.Drawings.AddChart("SahamyabVisitRank", eChartType.Line);
+                
+                //while (visitRank.Series.Count > 0)
+                //{
+                //    visitRank.Series.Delete(0);
+                //}
 
 
 
@@ -561,7 +564,7 @@ namespace app.Controllers
 
         private string GetCurrentDate()
         {
-            var d = DateTime.Now;
+            var d = DateTime.Now.AddDays(-1);
             PersianCalendar pc = new PersianCalendar();
             return string.Format("{0}/{1}/{2}", pc.GetYear(d), pc.GetMonth(d).ToString().PadLeft(2, '0'), pc.GetDayOfMonth(d).ToString().PadLeft(2, '0'));
         }
