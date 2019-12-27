@@ -478,81 +478,123 @@ namespace app.Controllers
 
         private void DoCreateChart()
         {
-            string exResult = "marketResult.xlsx";
-            FileInfo fileResult = new FileInfo(exResult);
-
-            using (ExcelPackage result = new ExcelPackage(fileResult))
+            try
             {
-                var mainChart = result.Workbook.Worksheets.Where(n => n.Name == "Charts").FirstOrDefault();
-                var excelWorksheet = result.Workbook.Worksheets.Where(n => n.Name == "فسا").FirstOrDefault();
-                ExcelChart visitRank = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
-                if (visitRank != null)
-                    mainChart.Drawings.Remove(visitRank);
-
-                visitRank = mainChart.Drawings.AddChart("SahamyabVisitRank", eChartType.Line);
-                
-                //while (visitRank.Series.Count > 0)
-                //{
-                //    visitRank.Series.Delete(0);
-                //}
 
 
+                string exResult = "marketResult.xlsx";
+                FileInfo fileResult = new FileInfo(exResult);
 
-
-                var oldChart = mainChart.Drawings.Where(n => n.Name == "chart1").FirstOrDefault();
-                if (oldChart != null)
-                    mainChart.Drawings.Remove(oldChart);
-                var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
-
-                string firstxSeries = excelWorksheet.Name;
-                foreach (var item in result.Workbook.Worksheets.Where(n => n.Name != "Charts"))
+                using (ExcelPackage result = new ExcelPackage(fileResult))
                 {
-                    bool canInsert = false;
-                    bool canInsertVisitRank = false;
-                    int max = item.Dimension.Rows;
-                    int min = System.Math.Max(2, max - 30);
-                    for (int i = min; i <= max; i++)
+                    var mainChart = result.Workbook.Worksheets.Where(n => n.Name == "Charts").FirstOrDefault();
+                    var excelSampleSheet = result.Workbook.Worksheets.Where(n => n.Name == "فسا").FirstOrDefault();
+                    string firstxSeries = excelSampleSheet.Name;
+
+                    ExcelChart visitRanka = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabRanka").FirstOrDefault();
+                    ExcelChart visitRankb = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabRankb").FirstOrDefault();
+                    ExcelChart visitRankc = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabRankc").FirstOrDefault();
+                    if (visitRanka != null)
                     {
-                        int postCount = int.Parse((item.Cells[$"W{i}"].Value ?? "0").ToString());
-                        if (postCount > 100)
+                        mainChart.Drawings.Remove(visitRanka);
+                        mainChart.Drawings.Remove(visitRankb);
+                        mainChart.Drawings.Remove(visitRankc);
+                    }
+                    visitRanka = mainChart.Drawings.AddChart("SahamyabRanka", eChartType.Line);
+                    visitRanka.SetPosition(0, 0, 0, 0);
+                    visitRanka.SetSize(500, 400);
+
+                    visitRankb = mainChart.Drawings.AddChart("SahamyabRankb", eChartType.Line);
+                    visitRankb.SetPosition(0, 0, 10, 0);
+                    visitRankb.SetSize(500, 400);
+
+                    visitRankc = mainChart.Drawings.AddChart("SahamyabRankc", eChartType.Line);
+                    visitRankc.SetPosition(0, 0, 20, 0);
+                    visitRankc.SetSize(500, 400);
+
+                    var rowCount = excelSampleSheet.Dimension.Rows - 1;
+                    var orderedByRankSheets = result.Workbook.Worksheets.Where(n => n.Name != "Charts").OrderBy(n => n.Cells[$"Z{rowCount}"]).ToList();
+                    var first20 = orderedByRankSheets.Take(20);
+
+                    first20.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = System.Math.Max(2, max - 30);
+                        var series1 = visitRanka.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
+                        series1.Header = n.Name;
+                    });
+
+                    ExcelChart visitRank = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
+                    if (visitRank != null)
+                        mainChart.Drawings.Remove(visitRank);
+
+                    visitRank = mainChart.Drawings.AddChart("SahamyabVisitRank", eChartType.Line);
+
+                    visitRank.SetPosition(0, 0, 0, 0);
+                    visitRank.SetSize(100, 200);
+
+
+
+                    var oldChart = mainChart.Drawings.Where(n => n.Name == "chart1").FirstOrDefault();
+                    if (oldChart != null)
+                        mainChart.Drawings.Remove(oldChart);
+                    var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
+                    diagram.SetPosition(10, 0, 0, 0);
+                    diagram.SetSize(300, 400);
+
+                    foreach (var item in result.Workbook.Worksheets.Where(n => n.Name != "Charts"))
+                    {
+                        bool canInsert = false;
+                        bool canInsertVisitRank = false;
+                        int max = item.Dimension.Rows;
+                        int min = System.Math.Max(2, max - 30);
+                        for (int i = min; i <= max; i++)
                         {
-                            canInsert = true;
-                            //break;
+                            int postCount = int.Parse((item.Cells[$"W{i}"].Value ?? "0").ToString());
+                            if (postCount > 100)
+                            {
+                                canInsert = true;
+                                //break;
+                            }
+
+                            int visitCount = int.Parse((item.Cells[$"Z{i}"].Value ?? "1000").ToString());
+                            if (visitCount < 200)
+                            {
+                                canInsertVisitRank = true;
+                                //break;
+                            }
+
+
+                        }
+                        if (canInsert)
+                        {
+                            var series1 = diagram.Series.Add($"{item.Name}!W{min}:W{max}", $"{firstxSeries}!A{min}:A{max}");
+                            series1.Header = item.Name;
                         }
 
-                        int visitCount = int.Parse((item.Cells[$"Z{i}"].Value ?? "1000").ToString());
-                        if (visitCount < 200)
+                        if (canInsertVisitRank)
                         {
-                            canInsertVisitRank = true;
-                            //break;
+                            var series1 = visitRank.Series.Add($"{item.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
+                            series1.Header = item.Name;
                         }
-
-
-                    }
-                    if (canInsert)
-                    {
-                        var series1 = diagram.Series.Add($"{item.Name}!W{min}:W{max}", $"{firstxSeries}!A{min}:A{max}");
-                        series1.Header = item.Name;
                     }
 
-                    if (canInsertVisitRank)
-                    {
-                        var series1 = visitRank.Series.Add($"{item.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
-                        series1.Header = item.Name;
-                    }
+                    visitRank.Title.Text = "رتبه بازدید";
+                    diagram.Title.Text = "تعداد پست سهام یاب";
+                    //var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
+                    //for (int i = 1; i <= 6; i++)
+                    //{
+                    //    var series = diagram.Series.Add("فسا!" + $"B{i}:C{i}", "B1:C1");
+                    //    //var series = diagram.Series.Add( $"B{i}:C{i}", "B1:C1");
+                    //    series.Header = excelWorksheet.Cells[$"A{i}"].Value.ToString();
+                    //}
+                    diagram.Border.Fill.Color = System.Drawing.Color.Green;
+                    result.Save();
                 }
-
-                visitRank.Title.Text = "رتبه بازدید";
-                diagram.Title.Text = "تعداد پست سهام یاب";
-                //var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
-                //for (int i = 1; i <= 6; i++)
-                //{
-                //    var series = diagram.Series.Add("فسا!" + $"B{i}:C{i}", "B1:C1");
-                //    //var series = diagram.Series.Add( $"B{i}:C{i}", "B1:C1");
-                //    series.Header = excelWorksheet.Cells[$"A{i}"].Value.ToString();
-                //}
-                diagram.Border.Fill.Color = System.Drawing.Color.Green;
-                result.Save();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("chart", ex);
             }
         }
 
