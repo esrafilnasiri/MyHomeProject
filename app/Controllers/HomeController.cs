@@ -70,7 +70,31 @@ namespace app.Controllers
                             var resultSheet = result.Workbook.Worksheets.Where(n => n.Name == marketName).FirstOrDefault();
                             if (resultSheet == null)
                             {
-                                throw new Exception("new market added");
+                                //throw new Exception("new market added");
+                                result.Workbook.Worksheets.Add(marketName);
+                                resultSheet = result.Workbook.Worksheets.Where(n => n.Name == marketName).FirstOrDefault();
+                                resultSheet.Cells[1, 1].Value = "تاریخ";
+                                resultSheet.Cells[1, 2].Value = "تعداد";
+                                resultSheet.Cells[1, 3].Value = "حجم";
+                                resultSheet.Cells[1, 4].Value = "ارزش";
+                                resultSheet.Cells[1, 5].Value = "دیروز";
+                                resultSheet.Cells[1, 6].Value = "اولین";
+                                resultSheet.Cells[1, 7].Value = "آخرین معامله - مقدار";
+                                resultSheet.Cells[1, 8].Value = "آخرین معامله - تغییر";
+                                resultSheet.Cells[1, 9].Value = "آخرین معامله - درصد";
+                                resultSheet.Cells[1, 10].Value = "قیمت پایانی - مقدار";
+                                resultSheet.Cells[1, 11].Value = "قیمت پایانی - تغییر";
+                                resultSheet.Cells[1, 12].Value = "قیمت پایانی - درصد";
+                                resultSheet.Cells[1, 13].Value = "کمترین";
+                                resultSheet.Cells[1, 14].Value = "بیشترین";
+                                resultSheet.Cells[1, 15].Value = "EPS";
+                                resultSheet.Cells[1, 16].Value = "P/E";
+                                resultSheet.Cells[1, 17].Value = "خرید - تعداد";
+                                resultSheet.Cells[1, 18].Value = "خرید - حجم";
+                                resultSheet.Cells[1, 19].Value = "خرید - قیمت";
+                                resultSheet.Cells[1, 20].Value = "فروش - قیمت";
+                                resultSheet.Cells[1, 21].Value = "فروش - حجم";
+                                resultSheet.Cells[1, 22].Value = "فروش - تعداد";
                             }
                             var resultCurrentRowIndex = resultSheet.Dimension.Rows + 1;
                             resultSheet.Cells[resultCurrentRowIndex, 1].Value = this.GetCurrentDate();
@@ -233,6 +257,41 @@ namespace app.Controllers
             }
         }
 
+        public IActionResult RebuildData()
+        {
+            try
+            {
+                this.DoRebuildData();
+                return Json(new { Success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Success = false, Message = ex.ToString() });
+            }
+        }
+
+        private void DoRebuildData()
+        {
+            string exResult = "marketResult.xlsx";
+            FileInfo fileResult = new FileInfo(exResult);
+
+            using (ExcelPackage result = new ExcelPackage(fileResult))
+            {
+                var mainChart = result.Workbook.Worksheets.Where(n => n.Name == "Charts").FirstOrDefault();
+                ExcelObjectCompare excelObjectCompare = new ExcelObjectCompare();
+                var allMarkentNameConts = result.Workbook.Worksheets.Count;
+                foreach (var sahamheet in result.Workbook.Worksheets)
+                {
+                    int rowCount = sahamheet.Dimension.Rows;
+                    for (int row = 2; row <= rowCount; row++)
+                    {
+                        var rankValue = sahamheet.Cells[$"Z{row}"].Value;
+
+                    }
+                }
+
+            }
+        }
 
         public IActionResult CreateChart()
         {
@@ -480,8 +539,6 @@ namespace app.Controllers
         {
             try
             {
-
-
                 string exResult = "marketResult.xlsx";
                 FileInfo fileResult = new FileInfo(exResult);
 
@@ -505,15 +562,17 @@ namespace app.Controllers
                     visitRanka.SetSize(500, 400);
 
                     visitRankb = mainChart.Drawings.AddChart("SahamyabRankb", eChartType.Line);
-                    visitRankb.SetPosition(0, 0, 10, 0);
+                    visitRankb.SetPosition(10, 0, 10, 0);
                     visitRankb.SetSize(500, 400);
 
                     visitRankc = mainChart.Drawings.AddChart("SahamyabRankc", eChartType.Line);
-                    visitRankc.SetPosition(0, 0, 20, 0);
+                    visitRankc.SetPosition(20, 0, 20, 0);
                     visitRankc.SetSize(500, 400);
 
                     var rowCount = excelSampleSheet.Dimension.Rows - 1;
-                    var orderedByRankSheets = result.Workbook.Worksheets.Where(n => n.Name != "Charts").OrderBy(n => n.Cells[$"Z{rowCount}"]).ToList();
+                    ExcelObjectCompare excelObjectCompare = new ExcelObjectCompare();
+                    var orderedByRankSheets = result.Workbook.Worksheets.Where(n => n.Name != "Charts").Where(n => n.Cells[$"X{rowCount}"] != null && n.Cells[$"X{rowCount}"].Value != null && (double)n.Cells[$"X{rowCount}"].Value < 300).OrderBy(n => n.Cells[$"X{rowCount}"], excelObjectCompare).ToList();
+
                     var first20 = orderedByRankSheets.Take(20);
 
                     first20.ToList().ForEach(n =>
@@ -523,6 +582,25 @@ namespace app.Controllers
                         var series1 = visitRanka.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
                         series1.Header = n.Name;
                     });
+
+                    var second20 = orderedByRankSheets.Skip(20).Take(20);
+                    second20.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = System.Math.Max(2, max - 30);
+                        var series1 = visitRankb.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
+                        series1.Header = n.Name;
+                    });
+
+                    var three20 = orderedByRankSheets.Skip(40).Take(20);
+                    three20.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = System.Math.Max(2, max - 30);
+                        var series1 = visitRankc.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
+                        series1.Header = n.Name;
+                    });
+
 
                     ExcelChart visitRank = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
                     if (visitRank != null)
