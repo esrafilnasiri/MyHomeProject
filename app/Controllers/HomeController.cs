@@ -201,7 +201,7 @@ namespace app.Controllers
                 FileInfo fileResult = new FileInfo(exResult);
                 using (ExcelPackage result = new ExcelPackage(fileResult))
                 {
-                    int resultCurrentRowIndex = 10;
+                    int resultCurrentRowIndex = 12;
                     foreach (var resultSheet in result.Workbook.Worksheets)
                     {
                         var marketName = resultSheet.Name;
