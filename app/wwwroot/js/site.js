@@ -71,3 +71,32 @@ $('#btnSahamyab').on('click', function (e) {
         }
     });
 });
+
+
+
+$('#btnoldDays').on('click', function (e) {
+
+    e.preventDefault();
+    var date = $('#txtdate').val();
+    $.ajax({
+        url: "/Home/FromTseTmcOldDate",
+        type: "POST",
+        //data: JSON.stringify( { 'Option': date }),
+        data:{ 'Option': date },
+        //dataType: "json",
+        //traditional: true,
+        //contentType: "application/json; charset=utf-8",
+
+        success: function (data) {
+            if (data.success) {
+                alert("Done");
+            } else {
+                alert("Error occurs on the Database level!");
+            }
+        },
+        error: function () {
+            alert("An error has occured!!!");
+        }
+    });
+});
+

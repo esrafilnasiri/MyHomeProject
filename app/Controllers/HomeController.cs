@@ -201,12 +201,14 @@ namespace app.Controllers
                 FileInfo fileResult = new FileInfo(exResult);
                 using (ExcelPackage result = new ExcelPackage(fileResult))
                 {
-                    int resultCurrentRowIndex = 15;
+                    
                     foreach (var resultSheet in result.Workbook.Worksheets)
                     {
                         var marketName = resultSheet.Name;
                         if (marketName == "Charts")
                             continue;
+
+                        int resultCurrentRowIndex = resultSheet.Dimension.Rows;
                         marketName = marketName.Replace('ك', 'ک');
                         marketName = marketName.Replace('ي', 'ی');
 
@@ -256,6 +258,136 @@ namespace app.Controllers
                 });
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> FromTseTmcOldDate(string Option)
+        {
+            try
+            {
+                string getTsemcExcelURL = "http://members.tsetmc.com/tsev2/excel/MarketWatchPlus.aspx?d=" + Option;
+                var handler = new HttpClientHandler();
+                handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+                var client = new HttpClient(handler);
+
+                var downloadedExcel = await client.GetByteArrayAsync(getTsemcExcelURL);
+                Stream stream = new MemoryStream(downloadedExcel);
+
+                using (ExcelPackage marketExcel = new ExcelPackage(stream))
+                {
+                    string exResult = "marketResult.xlsx";
+                    FileInfo fileResult = new FileInfo(exResult);
+                    using (ExcelPackage result = new ExcelPackage(fileResult))
+                    {
+                        var mainSheet = marketExcel.Workbook.Worksheets.Where(n => n.Name == "دیده بان بازار").FirstOrDefault();
+                        int rowCount = mainSheet.Dimension.Rows;
+                        int ColCount = mainSheet.Dimension.Columns;
+                        for (int row = 4; row <= rowCount; row++)
+                        {
+                            var marketName = mainSheet.Cells[row, 1].Value.ToString();
+                            if (string.IsNullOrEmpty(marketName) || marketName.Any(c => char.IsDigit(c)) || marketName.EndsWith('ح'))
+                                continue;
+
+                            var resultSheet = result.Workbook.Worksheets.Where(n => n.Name == marketName).FirstOrDefault();
+                            if (resultSheet == null)
+                            {
+                                //throw new Exception("new market added");
+                                result.Workbook.Worksheets.Add(marketName);
+                                resultSheet = result.Workbook.Worksheets.Where(n => n.Name == marketName).FirstOrDefault();
+                                resultSheet.Cells[1, 1].Value = "تاریخ";
+                                resultSheet.Cells[1, 2].Value = "تعداد";
+                                resultSheet.Cells[1, 3].Value = "حجم";
+                                resultSheet.Cells[1, 4].Value = "ارزش";
+                                resultSheet.Cells[1, 5].Value = "دیروز";
+                                resultSheet.Cells[1, 6].Value = "اولین";
+                                resultSheet.Cells[1, 7].Value = "آخرین معامله - مقدار";
+                                resultSheet.Cells[1, 8].Value = "آخرین معامله - تغییر";
+                                resultSheet.Cells[1, 9].Value = "آخرین معامله - درصد";
+                                resultSheet.Cells[1, 10].Value = "قیمت پایانی - مقدار";
+                                resultSheet.Cells[1, 11].Value = "قیمت پایانی - تغییر";
+                                resultSheet.Cells[1, 12].Value = "قیمت پایانی - درصد";
+                                resultSheet.Cells[1, 13].Value = "کمترین";
+                                resultSheet.Cells[1, 14].Value = "بیشترین";
+                                resultSheet.Cells[1, 15].Value = "EPS";
+                                resultSheet.Cells[1, 16].Value = "P/E";
+                                resultSheet.Cells[1, 17].Value = "خرید - تعداد";
+                                resultSheet.Cells[1, 18].Value = "خرید - حجم";
+                                resultSheet.Cells[1, 19].Value = "خرید - قیمت";
+                                resultSheet.Cells[1, 20].Value = "فروش - قیمت";
+                                resultSheet.Cells[1, 21].Value = "فروش - حجم";
+                                resultSheet.Cells[1, 22].Value = "فروش - تعداد";
+                            }
+                            var resultCurrentRowIndex = resultSheet.Dimension.Rows + 1;
+                            resultSheet.Cells[resultCurrentRowIndex, 1].Value = Option;
+                            for (int col = 2; col <= 22; col++)
+                            {
+                                resultSheet.Cells[resultCurrentRowIndex, col].Value = mainSheet.Cells[row, col + 1].Value;
+                            }
+
+
+                            resultSheet.Cells[resultCurrentRowIndex, 23].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 23].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 24].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 24].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 25].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 25].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 26].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 26].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 27].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 27].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 28].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 28].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 29].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 29].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 30].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 30].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 31].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 31].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 32].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 32].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 33].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 33].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 34].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 34].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 35].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 35].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 36].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 36].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 37].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 37].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 38].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 38].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 39].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 39].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 40].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 40].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 41].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 41].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 42].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 42].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 43].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 43].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 44].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 44].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 45].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 45].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 46].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 46].Value;
+                            resultSheet.Cells[resultCurrentRowIndex, 47].Value = resultSheet.Cells[resultCurrentRowIndex - 1, 47].Value;
+
+
+                            //resultSheet.Cells[resultCurrentRowIndex, 23].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 23].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 24].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 24].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 25].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 25].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 26].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 26].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 27].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 27].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 28].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 28].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 29].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 29].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 30].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 30].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 31].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 31].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 32].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 32].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 33].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 33].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 34].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 34].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 35].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 35].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 36].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 36].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 37].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 37].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 38].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 38].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 39].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 39].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 40].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 40].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 41].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 41].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 42].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 42].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 43].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 43].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 44].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 44].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 45].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 45].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 46].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 46].Value;
+                            //resultSheet.Cells[resultCurrentRowIndex, 47].Value = resultSheet.Cells[resultCurrentRowIndex - 2, 47].Value;
+                        }
+                        result.Save();
+                    }
+                }
+                return Json(new { Success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { Success = false, Message = ex.ToString() });
+            }
+        }
+        
 
         public IActionResult RebuildData()
         {
@@ -386,7 +518,7 @@ namespace app.Controllers
                             //resultSheet.Cells[1, 13].Value = "EPSEPSEPS";
                         }
                         var resultCurrentRowIndex = resultSheet.Dimension.Rows + 1;
-                        resultSheet.Cells[resultCurrentRowIndex, 1].Value = this.GetCurrentDate();
+                        resultSheet.Cells[resultCurrentRowIndex, 1].Value = "1398/10/15";//this.GetCurrentDate();
                         for (int col = 2; col <= 22; col++)
                         {
                             resultSheet.Cells[resultCurrentRowIndex, col].Value = mainSheet.Cells[row, col + 1].Value;
@@ -554,125 +686,146 @@ namespace app.Controllers
                     if (visitRanka != null)
                     {
                         mainChart.Drawings.Remove(visitRanka);
-                        mainChart.Drawings.Remove(visitRankb);
-                        mainChart.Drawings.Remove(visitRankc);
+                        //mainChart.Drawings.Remove(visitRankb);
+                        //mainChart.Drawings.Remove(visitRankc);
                     }
                     visitRanka = mainChart.Drawings.AddChart("SahamyabRanka", eChartType.Line);
                     visitRanka.SetPosition(0, 0, 0, 0);
                     visitRanka.SetSize(500, 400);
 
-                    visitRankb = mainChart.Drawings.AddChart("SahamyabRankb", eChartType.Line);
-                    visitRankb.SetPosition(10, 0, 10, 0);
-                    visitRankb.SetSize(500, 400);
+                    //visitRankb = mainChart.Drawings.AddChart("SahamyabRankb", eChartType.Line);
+                    //visitRankb.SetPosition(10, 0, 10, 0);
+                    //visitRankb.SetSize(500, 400);
 
-                    visitRankc = mainChart.Drawings.AddChart("SahamyabRankc", eChartType.Line);
-                    visitRankc.SetPosition(20, 0, 20, 0);
-                    visitRankc.SetSize(500, 400);
+                    //visitRankc = mainChart.Drawings.AddChart("SahamyabRankc", eChartType.Line);
+                    //visitRankc.SetPosition(20, 0, 20, 0);
+                    //visitRankc.SetSize(500, 400);
 
                     var rowCount = excelSampleSheet.Dimension.Rows - 1;
                     ExcelObjectCompare excelObjectCompare = new ExcelObjectCompare();
                     var orderedByRankSheets = result.Workbook.Worksheets.Where(n => n.Name != "Charts").Where(n => n.Cells[$"X{rowCount}"] != null && n.Cells[$"X{rowCount}"].Value != null && (double)n.Cells[$"X{rowCount}"].Value < 300).OrderBy(n => n.Cells[$"X{rowCount}"], excelObjectCompare).ToList();
 
-                    var first20 = orderedByRankSheets.Take(20);
+                    var first20 = orderedByRankSheets.Take(10);
 
                     first20.ToList().ForEach(n =>
                     {
-                        int max = n.Dimension.Rows;
+                        int max = n.Dimension.Rows-1;
                         int min = System.Math.Max(2, max - 30);
-                        var series1 = visitRanka.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
+                        this.ReCorrectionOutOfRangeValue(n, min, max, "X");
+                        var series1 = visitRanka.Series.Add($"{n.Name}!X{min}:X{max}", $"{firstxSeries}!A{min}:A{max}");
                         series1.Header = n.Name;
                     });
 
-                    var second20 = orderedByRankSheets.Skip(20).Take(20);
-                    second20.ToList().ForEach(n =>
-                    {
-                        int max = n.Dimension.Rows;
-                        int min = System.Math.Max(2, max - 30);
-                        var series1 = visitRankb.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
-                        series1.Header = n.Name;
-                    });
-
-                    var three20 = orderedByRankSheets.Skip(40).Take(20);
-                    three20.ToList().ForEach(n =>
-                    {
-                        int max = n.Dimension.Rows;
-                        int min = System.Math.Max(2, max - 30);
-                        var series1 = visitRankc.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
-                        series1.Header = n.Name;
-                    });
-
-
-                    ExcelChart visitRank = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
-                    if (visitRank != null)
-                        mainChart.Drawings.Remove(visitRank);
-
-                    visitRank = mainChart.Drawings.AddChart("SahamyabVisitRank", eChartType.Line);
-
-                    visitRank.SetPosition(0, 0, 0, 0);
-                    visitRank.SetSize(100, 200);
-
-
-
-                    var oldChart = mainChart.Drawings.Where(n => n.Name == "chart1").FirstOrDefault();
-                    if (oldChart != null)
-                        mainChart.Drawings.Remove(oldChart);
-                    var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
-                    diagram.SetPosition(10, 0, 0, 0);
-                    diagram.SetSize(300, 400);
-
-                    foreach (var item in result.Workbook.Worksheets.Where(n => n.Name != "Charts"))
-                    {
-                        bool canInsert = false;
-                        bool canInsertVisitRank = false;
-                        int max = item.Dimension.Rows;
-                        int min = System.Math.Max(2, max - 30);
-                        for (int i = min; i <= max; i++)
-                        {
-                            int postCount = int.Parse((item.Cells[$"W{i}"].Value ?? "0").ToString());
-                            if (postCount > 100)
-                            {
-                                canInsert = true;
-                                //break;
-                            }
-
-                            int visitCount = int.Parse((item.Cells[$"Z{i}"].Value ?? "1000").ToString());
-                            if (visitCount < 200)
-                            {
-                                canInsertVisitRank = true;
-                                //break;
-                            }
-
-
-                        }
-                        if (canInsert)
-                        {
-                            var series1 = diagram.Series.Add($"{item.Name}!W{min}:W{max}", $"{firstxSeries}!A{min}:A{max}");
-                            series1.Header = item.Name;
-                        }
-
-                        if (canInsertVisitRank)
-                        {
-                            var series1 = visitRank.Series.Add($"{item.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
-                            series1.Header = item.Name;
-                        }
-                    }
-
-                    visitRank.Title.Text = "رتبه بازدید";
-                    diagram.Title.Text = "تعداد پست سهام یاب";
-                    //var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
-                    //for (int i = 1; i <= 6; i++)
+                    //var second20 = orderedByRankSheets.Skip(20).Take(20);
+                    //second20.ToList().ForEach(n =>
                     //{
-                    //    var series = diagram.Series.Add("فسا!" + $"B{i}:C{i}", "B1:C1");
-                    //    //var series = diagram.Series.Add( $"B{i}:C{i}", "B1:C1");
-                    //    series.Header = excelWorksheet.Cells[$"A{i}"].Value.ToString();
+                    //    int max = n.Dimension.Rows;
+                    //    int min = System.Math.Max(2, max - 30);
+                    //    var series1 = visitRankb.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
+                    //    series1.Header = n.Name;
+                    //});
+
+                    //var three20 = orderedByRankSheets.Skip(40).Take(20);
+                    //three20.ToList().ForEach(n =>
+                    //{
+                    //    int max = n.Dimension.Rows;
+                    //    int min = System.Math.Max(2, max - 30);
+                    //    var series1 = visitRankc.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
+                    //    series1.Header = n.Name;
+                    //});
+
+
+                    //ExcelChart visitRank = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
+                    //if (visitRank != null)
+                    //    mainChart.Drawings.Remove(visitRank);
+
+                    //visitRank = mainChart.Drawings.AddChart("SahamyabVisitRank", eChartType.Line);
+
+                    //visitRank.SetPosition(0, 0, 0, 0);
+                    //visitRank.SetSize(100, 200);
+
+
+
+                    //var oldChart = mainChart.Drawings.Where(n => n.Name == "chart1").FirstOrDefault();
+                    //if (oldChart != null)
+                    //    mainChart.Drawings.Remove(oldChart);
+                    //var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
+                    //diagram.SetPosition(10, 0, 0, 0);
+                    //diagram.SetSize(300, 400);
+
+                    //foreach (var item in result.Workbook.Worksheets.Where(n => n.Name != "Charts"))
+                    //{
+                    //    bool canInsert = false;
+                    //    bool canInsertVisitRank = false;
+                    //    int max = item.Dimension.Rows;
+                    //    int min = System.Math.Max(2, max - 30);
+                    //    for (int i = min; i <= max; i++)
+                    //    {
+                    //        int postCount = int.Parse((item.Cells[$"W{i}"].Value ?? "0").ToString());
+                    //        if (postCount > 100)
+                    //        {
+                    //            canInsert = true;
+                    //            //break;
+                    //        }
+
+                    //        int visitCount = int.Parse((item.Cells[$"Z{i}"].Value ?? "1000").ToString());
+                    //        if (visitCount < 200)
+                    //        {
+                    //            canInsertVisitRank = true;
+                    //            //break;
+                    //        }
+
+
+                    //    }
+                    //    if (canInsert)
+                    //    {
+                    //        var series1 = diagram.Series.Add($"{item.Name}!W{min}:W{max}", $"{firstxSeries}!A{min}:A{max}");
+                    //        series1.Header = item.Name;
+                    //    }
+
+                    //    if (canInsertVisitRank)
+                    //    {
+                    //        var series1 = visitRank.Series.Add($"{item.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
+                    //        series1.Header = item.Name;
+                    //    }
                     //}
-                    diagram.Border.Fill.Color = System.Drawing.Color.Green;
+
+                    //visitRank.Title.Text = "رتبه بازدید";
+                    //diagram.Title.Text = "تعداد پست سهام یاب";
+                    ////var diagram = mainChart.Drawings.AddChart("chart1", eChartType.Line);
+                    ////for (int i = 1; i <= 6; i++)
+                    ////{
+                    ////    var series = diagram.Series.Add("فسا!" + $"B{i}:C{i}", "B1:C1");
+                    ////    //var series = diagram.Series.Add( $"B{i}:C{i}", "B1:C1");
+                    ////    series.Header = excelWorksheet.Cells[$"A{i}"].Value.ToString();
+                    ////}
+                    //diagram.Border.Fill.Color = System.Drawing.Color.Green;
                     result.Save();
                 }
             }
             catch (Exception ex)
             {
                 throw new Exception("chart", ex);
+            }
+        }
+
+        private void ReCorrectionOutOfRangeValue(ExcelWorksheet sheet, int min, int max, string v)
+        {
+            float sum = 0;
+            for (int i = min; i <= max; i++)
+            {
+                var data = sheet.Cells[$"X{i}"].Value;
+                if (data != null)
+                    sum += float.Parse(data.ToString());
+            }
+            var avr = sum / (max - min);
+
+            for (int i = min; i <= max; i++)
+            {
+                var val = sheet.Cells[$"X{i}"].Value;
+                if (val == null || float.Parse(val.ToString()) + 150 < avr || float.Parse(val.ToString()) - 150 > avr)
+                    sheet.Cells[$"X{i}"].Value = avr;
+
             }
         }
 
@@ -684,7 +837,7 @@ namespace app.Controllers
 
         private string GetCurrentDate()
         {
-            var d = DateTime.Now.AddDays(-1);
+            var d = DateTime.Now.AddDays(0);
             PersianCalendar pc = new PersianCalendar();
             return string.Format("{0}/{1}/{2}", pc.GetYear(d), pc.GetMonth(d).ToString().PadLeft(2, '0'), pc.GetDayOfMonth(d).ToString().PadLeft(2, '0'));
         }
