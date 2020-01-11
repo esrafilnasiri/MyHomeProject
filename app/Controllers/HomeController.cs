@@ -195,14 +195,13 @@ namespace app.Controllers
 
         public async Task<IActionResult> FromSahamyab(string Option)
         {
-            try
+            string exResult = "marketResult.xlsx";
+            FileInfo fileResult = new FileInfo(exResult);
+            using (ExcelPackage result = new ExcelPackage(fileResult))
             {
-                string exResult = "marketResult.xlsx";
-                FileInfo fileResult = new FileInfo(exResult);
-                using (ExcelPackage result = new ExcelPackage(fileResult))
+                foreach (var resultSheet in result.Workbook.Worksheets)
                 {
-                    
-                    foreach (var resultSheet in result.Workbook.Worksheets)
+                    try
                     {
                         var marketName = resultSheet.Name;
                         if (marketName == "Charts")
@@ -244,18 +243,14 @@ namespace app.Controllers
                         resultSheet.Cells[resultCurrentRowIndex, 46].Value = sahamyabmarketinfo.result[0].tradeVolumeRankGroup;
                         resultSheet.Cells[resultCurrentRowIndex, 47].Value = sahamyabmarketinfo.result[0].zaribNaghdShavandegi;
                     }
-                    result.Save();
+                    catch (Exception ex)
+                    {
 
-                    return Json(new { Success = true });
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                return Json(new
-                {
-                    Success = false,
-                    Message = ex.ToString()
-                });
+                result.Save();
+
+                return Json(new { Success = true });
             }
         }
 
@@ -712,7 +707,7 @@ namespace app.Controllers
                         int max = n.Dimension.Rows-1;
                         int min = System.Math.Max(2, max - 30);
                         this.ReCorrectionOutOfRangeValue(n, min, max, "X");
-                        var series1 = visitRanka.Series.Add($"{n.Name}!X{min}:X{max}", $"{firstxSeries}!A{min}:A{max}");
+                        var series1 = visitRanka.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
                         series1.Header = n.Name;
                     });
 
@@ -824,7 +819,9 @@ namespace app.Controllers
             {
                 var val = sheet.Cells[$"X{i}"].Value;
                 if (val == null || float.Parse(val.ToString()) + 150 < avr || float.Parse(val.ToString()) - 150 > avr)
-                    sheet.Cells[$"X{i}"].Value = avr;
+                    sheet.Cells[$"BB{i}"].Value = 500 - avr;
+                else
+                    sheet.Cells[$"BB{i}"].Value = 500 - (float)sheet.Cells[$"X{i}"].Value;
 
             }
         }
