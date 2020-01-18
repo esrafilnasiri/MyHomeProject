@@ -682,52 +682,58 @@ namespace app.Controllers
                     {
                         mainChart.Drawings.Remove(visitRanka);
                         //mainChart.Drawings.Remove(visitRankb);
-                        //mainChart.Drawings.Remove(visitRankc);
+                        mainChart.Drawings.Remove(visitRankc);
                     }
                     visitRanka = mainChart.Drawings.AddChart("SahamyabRanka", eChartType.Line);
                     visitRanka.SetPosition(0, 0, 0, 0);
                     visitRanka.SetSize(500, 400);
 
-                    //visitRankb = mainChart.Drawings.AddChart("SahamyabRankb", eChartType.Line);
-                    //visitRankb.SetPosition(10, 0, 10, 0);
-                    //visitRankb.SetSize(500, 400);
+                    visitRankb = mainChart.Drawings.AddChart("SahamyabRankb", eChartType.Line);
+                    visitRankb.SetPosition(10, 0, 10, 0);
+                    visitRankb.SetSize(500, 400);
 
-                    //visitRankc = mainChart.Drawings.AddChart("SahamyabRankc", eChartType.Line);
-                    //visitRankc.SetPosition(20, 0, 20, 0);
-                    //visitRankc.SetSize(500, 400);
+                    visitRankc = mainChart.Drawings.AddChart("SahamyabRankc", eChartType.Line);
+                    visitRankc.SetPosition(20, 0, 20, 0);
+                    visitRankc.SetSize(500, 400);
 
                     var rowCount = excelSampleSheet.Dimension.Rows - 1;
                     ExcelObjectCompare excelObjectCompare = new ExcelObjectCompare();
                     var orderedByRankSheets = result.Workbook.Worksheets.Where(n => n.Name != "Charts").Where(n => n.Cells[$"X{rowCount}"] != null && n.Cells[$"X{rowCount}"].Value != null && (double)n.Cells[$"X{rowCount}"].Value < 300).OrderBy(n => n.Cells[$"X{rowCount}"], excelObjectCompare).ToList();
 
-                    var first20 = orderedByRankSheets.Take(10);
+                    var first20 = orderedByRankSheets.Take(5);
 
                     first20.ToList().ForEach(n =>
                     {
-                        int max = n.Dimension.Rows-1;
+                        int max = n.Dimension.Rows;
                         int min = System.Math.Max(2, max - 30);
                         this.ReCorrectionOutOfRangeValue(n, min, max, "X");
                         var series1 = visitRanka.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
                         series1.Header = n.Name;
                     });
+                    visitRanka.Title.Text = "رتبه تعداد پست در سهام یاب_1";
 
-                    //var second20 = orderedByRankSheets.Skip(20).Take(20);
-                    //second20.ToList().ForEach(n =>
-                    //{
-                    //    int max = n.Dimension.Rows;
-                    //    int min = System.Math.Max(2, max - 30);
-                    //    var series1 = visitRankb.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
-                    //    series1.Header = n.Name;
-                    //});
+                    var second20 = orderedByRankSheets.Skip(5).Take(5);
+                    second20.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = System.Math.Max(2, max - 30);
+                        this.ReCorrectionOutOfRangeValue(n, min, max, "X");
+                        var series1 = visitRankb.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
+                        series1.Header = n.Name;
+                    });
+                    visitRankb.Title.Text = "رتبه تعداد پست در سهام یاب_2";
 
-                    //var three20 = orderedByRankSheets.Skip(40).Take(20);
-                    //three20.ToList().ForEach(n =>
-                    //{
-                    //    int max = n.Dimension.Rows;
-                    //    int min = System.Math.Max(2, max - 30);
-                    //    var series1 = visitRankc.Series.Add($"{n.Name}!Z{min}:Z{max}", $"{firstxSeries}!A{min}:A{max}");
-                    //    series1.Header = n.Name;
-                    //});
+
+                    var three20 = orderedByRankSheets.Skip(10).Take(5);
+                    three20.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = System.Math.Max(2, max - 30);
+                        this.ReCorrectionOutOfRangeValue(n, min, max, "X");
+                        var series1 = visitRankc.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
+                        series1.Header = n.Name;
+                    });
+                    visitRankc.Title.Text = "رتبه تعداد پست در سهام یاب_3";
 
 
                     //ExcelChart visitRank = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabVisitRank").FirstOrDefault();
@@ -819,9 +825,9 @@ namespace app.Controllers
             {
                 var val = sheet.Cells[$"X{i}"].Value;
                 if (val == null || float.Parse(val.ToString()) + 150 < avr || float.Parse(val.ToString()) - 150 > avr)
-                    sheet.Cells[$"BB{i}"].Value = 500 - avr;
+                    sheet.Cells[$"BB{i}"].Value = 300 - avr;
                 else
-                    sheet.Cells[$"BB{i}"].Value = 500 - (float)sheet.Cells[$"X{i}"].Value;
+                    sheet.Cells[$"BB{i}"].Value = 300 - float.Parse( val.ToString());
 
             }
         }
