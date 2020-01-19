@@ -39,7 +39,7 @@ $('#btncharts').on('click', function (e) {
             if (data.success) {
                 alert("Done");
             } else {
-                alert("Error occurs on the Database level!");
+                alert(data.message);
             }
         },
         error: function () {
