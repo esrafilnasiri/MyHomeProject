@@ -26,7 +26,6 @@
     });
 
 $('#btncharts').on('click', function (e) {
-
     e.preventDefault();
     $.ajax({
         url: "/Home/CreateChart",
@@ -36,8 +35,43 @@ $('#btncharts').on('click', function (e) {
         traditional: true,
         contentType: "application/json; charset=utf-8",
         success: function (data) {
-            if (data.success) {
-                alert("Done");
+            if (data.success)
+            {
+                console.log(data);
+                console.log(data.chartData);
+                Highcharts.chart('container', {
+                    title: data.chartData.title,
+                    subtitle: data.chartData.subtitle,
+                    yAxis: data.chartData.yAxis,
+                    xAxis: data.chartData.xAxis,
+                    legend: data.chartData.legend,
+                    plotOptions: data.chartData.plotOptions,
+                    series: data.chartData.series,
+                    //responsive: {
+                    //    rules: [{
+                    //        condition: {
+                    //            maxWidth: 500
+                    //        },
+                    //        chartOptions: {
+                    //            legend: {
+                    //                layout: 'horizontal',
+                    //                align: 'center',
+                    //                verticalAlign: 'bottom'
+                    //            }
+                    //        }
+                    //    }]
+                    //}
+                });
+
+                Highcharts.chart('maxZarar3day', {
+                    title: data.maxZarar3Day.title,
+                    subtitle: data.maxZarar3Daysubtitle,
+                    yAxis: data.maxZarar3Day.yAxis,
+                    xAxis: data.maxZarar3Day.xAxis,
+                    legend: data.maxZarar3Day.legend,
+                    plotOptions: data.maxZarar3Day.plotOptions,
+                    series: data.maxZarar3Day.series,
+                });
             } else {
                 alert(data.message);
             }

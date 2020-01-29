@@ -2,7 +2,7 @@
     ViewData["Title"] = "Home Page";
 }
 
-
+<script src="https://code.highcharts.com/highcharts.js"></script>
 <div class="text-center">
 
     <h1 class="display-4">Welcome</h1>
@@ -13,5 +13,11 @@
     <button type="button" id="btncharts">Rebuild Charts</button>
     <input type="text" id="txtdate" />
 
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <div id="container" style="width:100%; height:400px;"></div>
+    <div id="maxZarar3day" style="width:30%; height:400px;"></div>
+    <div id="maxZarar7day" style="width:30%; height:400px;"></div>
+    <div id="maxZarar14day" style="width:30%; height:400px;"></div>
+    <div id="maxZarar30day" style="width:30%; height:400px;"></div>
+    <div id="maxZarar60day" style="width:30%; height:400px;"></div>
+    <div id="maxZarar90day" style="width:30%; height:400px;"></div>
 </div>
