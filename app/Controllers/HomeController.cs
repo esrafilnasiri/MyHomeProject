@@ -17,6 +17,7 @@ using System.Drawing;
 using System.Net;
 using OfficeOpenXml.Drawing.Chart;
 
+
 namespace app.Controllers
 {
     public class HomeController : Controller
@@ -342,8 +343,9 @@ namespace app.Controllers
         {
             try
             {
+               
                 this.DoRebuildData();
-                return Json(new { Success = true });
+                return Json(new { Success = true});
             }
             catch (Exception ex)
             {
@@ -378,8 +380,146 @@ namespace app.Controllers
         {
             try
             {
-                this.DoCreateChart();
-                return Json(new { Success = true });
+                string exResult = "marketResult.xlsx";
+                FileInfo fileResult = new FileInfo(exResult);
+                var seriesPostCountList = new List<app.Helper.Series>();
+                var xAxisPostCount = new app.Helper.XAxis();
+
+                var seriesMaxZarar3DayList = new List<app.Helper.Series>();
+                var xAxisMaxZarar3Day = new app.Helper.XAxis();
+
+                using (ExcelPackage result = new ExcelPackage(fileResult))
+                {
+                    var mainChart = result.Workbook.Worksheets.Where(n => n.Name == "Charts").FirstOrDefault();
+                    var excelSampleSheet = result.Workbook.Worksheets.Where(n => n.Name == "فسا").FirstOrDefault();
+                    string firstxSeries = excelSampleSheet.Name;
+
+                    var sahamyabLastdayRowDiffrence = 0;
+                    if (excelSampleSheet.Cells[$"W{excelSampleSheet.Dimension.Rows}"].Value == null)
+                        sahamyabLastdayRowDiffrence = 1;
+                    ExcelObjectCompare excelObjectCompare = new ExcelObjectCompare();
+                    var orderedByPostCountSheets = result.Workbook.Worksheets
+                                                             .Where(n => n.Name != "Charts")
+                                                             .Where(n => n.Cells[$"X{n.Dimension.Rows - sahamyabLastdayRowDiffrence}"] != null && n.Cells[$"X{n.Dimension.Rows - sahamyabLastdayRowDiffrence}"].Value != null && (double)n.Cells[$"X{n.Dimension.Rows - sahamyabLastdayRowDiffrence}"].Value < 300)
+                                                             .OrderBy(n => n.Cells[$"X{n.Dimension.Rows - sahamyabLastdayRowDiffrence}"], excelObjectCompare)
+                                                             .ToList();
+
+                    var first20 = orderedByPostCountSheets.Take(20);
+                    int seriesOrder = 1;
+                    first20.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows - sahamyabLastdayRowDiffrence;
+                        int min = System.Math.Max(2, max - 30);
+                        this.ReCorrectionOutOfRangeValue(n, min, max, "BB");
+                        var data = new List<object>();
+                        for (int i = min; i < max; i++)
+                        {
+                            data.Add(n.Cells[$"BB{i}"].Value);
+                            if (seriesOrder == 1)
+                                xAxisPostCount.categories.Add(n.Cells[$"A{i}"].Value.ToString());
+                        }
+                        seriesPostCountList.Add(new app.Helper.Series()
+                        {
+                            name = n.Name,
+                            data = data,
+                            visible = seriesOrder < 4,
+                        });
+                        seriesOrder++;
+                    });
+
+                    Double tryCast = 0;
+                    result.Workbook.Worksheets
+                                   .Where(n => n.Name != "Charts")
+                                   .ToList().ForEach(itemSheet =>
+                                   {
+                                       double mainScore90 = 100;
+                                       double mainScore60 = 100;
+                                       double mainScore30 = 100;
+                                       double mainScore14 = 100;
+                                       double mainScore7 = 100;
+                                       double mainScore3 = 100;
+                                       int sheetRowCount = itemSheet.Dimension.Rows;
+                                       int fromRow = Math.Min(90, itemSheet.Dimension.Rows)-2;
+                                       for (int i = fromRow; i >= 0; i--)
+                                       {
+                                           if (itemSheet.Cells[$"L{sheetRowCount - i}"]!=null && itemSheet.Cells[$"L{sheetRowCount - i}"].Value != null && double.TryParse(itemSheet.Cells[$"L{sheetRowCount - i}"].Value.ToString(), out tryCast))
+                                           {
+                                               var darsad = double.Parse(itemSheet.Cells[$"L{sheetRowCount - i}"].Value.ToString());
+                                               if (i < 3)
+                                                   mainScore3 += (mainScore3 * darsad) / 100;
+                                               if (i < 7)
+                                                   mainScore7 += (mainScore7 * darsad) / 100;
+                                               if (i < 14)
+                                                   mainScore14 += (mainScore14 * darsad) / 100;
+                                               if (i < 30)
+                                                   mainScore30 += (mainScore30 * darsad) / 100;
+                                               if (i < 60)
+                                                   mainScore60 += (mainScore60 * darsad) / 100;
+                                               if (i < 90)
+                                                   mainScore90 += (mainScore90 * darsad) / 100;
+                                           }
+                                       }
+                                       itemSheet.Cells[$"BC{sheetRowCount}"].Value = ((mainScore3 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BD{sheetRowCount}"].Value = ((mainScore7 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BE{sheetRowCount}"].Value = ((mainScore14 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BF{sheetRowCount}"].Value = ((mainScore30 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BG{sheetRowCount}"].Value = ((mainScore60 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BH{sheetRowCount}"].Value = ((mainScore90 / 100) - 1) * 100;
+                                   });
+                    result.Save();
+
+                    var orderedMaxZarar3Day = result.Workbook.Worksheets
+                                                    .Where(n => n.Name != "Charts")
+                                                    .Where(n => n.Cells[$"BC{n.Dimension.Rows}"] != null && n.Cells[$"BC{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BC{n.Dimension.Rows}"].Value < 3000)
+                                                    .OrderBy(n => n.Cells[$"BC{n.Dimension.Rows}"], excelObjectCompare)
+                                                    .ToList().Take(20);
+
+                    seriesOrder = 1;
+                    orderedMaxZarar3Day.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = max - 3;
+                        var data = new List<object>();
+                        for (int i = min; i <= max; i++)
+                        {
+                            data.Add(n.Cells[$"BC{i}"].Value);
+                            if (seriesOrder == 1)
+                                xAxisMaxZarar3Day.categories.Add(n.Cells[$"A{i}"].Value.ToString());
+                        }
+                        seriesMaxZarar3DayList.Add(new app.Helper.Series()
+                        {
+                            name = n.Name,
+                            data = data,
+                            visible = seriesOrder < 4,
+                        });
+                        seriesOrder++;
+                    });
+                }
+
+                var newChart = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "تعداد پست" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "تعداد" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesPostCountList,
+                    xAxis = xAxisPostCount
+                };
+
+                var maxZarar3Day = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "بیشترین ضرر ۳ روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxZarar3DayList,
+                    xAxis = xAxisMaxZarar3Day
+                };
+
+                //this.DoCreateChart();
+                return Json(new { Success = true, ChartData = newChart , maxZarar3Day });
             }
             catch (Exception ex)
             {
@@ -630,65 +770,74 @@ namespace app.Controllers
                     string firstxSeries = excelSampleSheet.Name;
 
                                                                                                                        
-                    //ExcelChart visitRanka = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabRanka").FirstOrDefault();
-                    //ExcelChart visitRankb = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabRankb").FirstOrDefault();
-                    //ExcelChart visitRankc = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabRankc").FirstOrDefault();
-                    //if (visitRanka != null)
-                    //{
-                    //    mainChart.Drawings.Remove(visitRanka);
-                    //    //mainChart.Drawings.Remove(visitRankb);
-                    //    mainChart.Drawings.Remove(visitRankc);
-                    //}
-                    //visitRanka = mainChart.Drawings.AddChart("SahamyabRanka", eChartType.Line);
-                    //visitRanka.SetPosition(0, 0, 0, 0);
-                    //visitRanka.SetSize(500, 400);
+                    ExcelChart postCounta = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabRanka").FirstOrDefault();
+                    ExcelChart visitRankb = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabRankb").FirstOrDefault();
+                    ExcelChart visitRankc = (ExcelChart)mainChart.Drawings.Where(n => n.Name == "SahamyabRankc").FirstOrDefault();
+                    if (postCounta != null)
+                    {
+                        mainChart.Drawings.Remove(postCounta);
+                        mainChart.Drawings.Remove(visitRankb);
+                        mainChart.Drawings.Remove(visitRankc);
+                    }
+                    //postCounta = mainChart.Drawings.AddChart("SahamyabRanka", eChartType.Line3D);
+                    postCounta = mainChart.Drawings.AddChart("SahamyabRanka", eChartType.Line3D);
+                    postCounta.SetPosition(0, 0, 0, 0);
+                    postCounta.SetSize(500, 400);
 
-                    //visitRankb = mainChart.Drawings.AddChart("SahamyabRankb", eChartType.Line);
-                    //visitRankb.SetPosition(10, 0, 10, 0);
-                    //visitRankb.SetSize(500, 400);
+                    visitRankb = mainChart.Drawings.AddChart("SahamyabRankb", eChartType.Line3D);
+                    visitRankb.SetPosition(10, 0, 10, 0);
+                    visitRankb.SetSize(500, 400);
 
-                    //visitRankc = mainChart.Drawings.AddChart("SahamyabRankc", eChartType.Line);
-                    //visitRankc.SetPosition(20, 0, 20, 0);
-                    //visitRankc.SetSize(500, 400);
+                    visitRankc = mainChart.Drawings.AddChart("SahamyabRankc", eChartType.Line3D);
+                    visitRankc.SetPosition(20, 0, 20, 0);
+                    visitRankc.SetSize(500, 400);
 
-                    //var rowCount = excelSampleSheet.Dimension.Rows - 1;
+                    var sahamyabLastdayRowDiffrence = 0;
+                    if (excelSampleSheet.Cells[$"W{excelSampleSheet.Dimension.Rows}"].Value == null)
+                        sahamyabLastdayRowDiffrence = 1;
                     ExcelObjectCompare excelObjectCompare = new ExcelObjectCompare();
-                    //var orderedByRankSheets = result.Workbook.Worksheets.Where(n => n.Name != "Charts").Where(n => n.Cells[$"X{rowCount}"] != null && n.Cells[$"X{rowCount}"].Value != null && (double)n.Cells[$"X{rowCount}"].Value < 300).OrderBy(n => n.Cells[$"X{rowCount}"], excelObjectCompare).ToList();
+                    var orderedByPostCountSheets = result.Workbook.Worksheets
+                                                             .Where(n => n.Name != "Charts")
+                                                             .Where(n => n.Cells[$"X{n.Dimension.Rows - sahamyabLastdayRowDiffrence}"] != null && n.Cells[$"X{n.Dimension.Rows - sahamyabLastdayRowDiffrence}"].Value != null && (double)n.Cells[$"X{n.Dimension.Rows - sahamyabLastdayRowDiffrence}"].Value < 300)
+                                                             .OrderBy(n => n.Cells[$"X{n.Dimension.Rows - sahamyabLastdayRowDiffrence}"], excelObjectCompare)
+                                                             .ToList();
 
-                    //var first20 = orderedByRankSheets.Take(5);
+                    var first20 = orderedByPostCountSheets.Take(20);
 
-                    //first20.ToList().ForEach(n =>
-                    //{
-                    //    int max = n.Dimension.Rows;
-                    //    int min = System.Math.Max(2, max - 30);
-                    //    this.ReCorrectionOutOfRangeValue(n, min, max, "X");
-                    //    var series1 = visitRanka.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
-                    //    series1.Header = n.Name;
-                    //});
-                    //visitRanka.Title.Text = "رتبه تعداد پست در سهام یاب_1";
+                    first20.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows-sahamyabLastdayRowDiffrence;
+                        int min = System.Math.Max(2, max - 30);
+                        this.ReCorrectionOutOfRangeValue(n, min, max, "BB");
+                        var series1 = postCounta.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
+                        series1.Header = n.Name;
+                    });
+                    postCounta.Title.Text = "رتبه تعداد پست در سهام یاب_1";
+                    postCounta.YAxis.MaxValue = 300;
+                    postCounta.YAxis.MinValue = 200;
 
-                    //var second20 = orderedByRankSheets.Skip(5).Take(5);
-                    //second20.ToList().ForEach(n =>
-                    //{
-                    //    int max = n.Dimension.Rows;
-                    //    int min = System.Math.Max(2, max - 30);
-                    //    this.ReCorrectionOutOfRangeValue(n, min, max, "X");
-                    //    var series1 = visitRankb.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
-                    //    series1.Header = n.Name;
-                    //});
-                    //visitRankb.Title.Text = "رتبه تعداد پست در سهام یاب_2";
+                    var second20 = orderedByPostCountSheets.Skip(20).Take(20);
+                    second20.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = System.Math.Max(2, max - 30);
+                        this.ReCorrectionOutOfRangeValue(n, min, max, "BB");
+                        var series1 = visitRankb.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
+                        series1.Header = n.Name;
+                    });
+                    visitRankb.Title.Text = "رتبه تعداد پست در سهام یاب_2";
 
 
-                    //var three20 = orderedByRankSheets.Skip(10).Take(5);
-                    //three20.ToList().ForEach(n =>
-                    //{
-                    //    int max = n.Dimension.Rows;
-                    //    int min = System.Math.Max(2, max - 30);
-                    //    this.ReCorrectionOutOfRangeValue(n, min, max, "X");
-                    //    var series1 = visitRankc.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
-                    //    series1.Header = n.Name;
-                    //});
-                    //visitRankc.Title.Text = "رتبه تعداد پست در سهام یاب_3";
+                    var three20 = orderedByPostCountSheets.Skip(40).Take(20);
+                    three20.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = System.Math.Max(2, max - 30);
+                        this.ReCorrectionOutOfRangeValue(n, min, max, "BB");
+                        var series1 = visitRankc.Series.Add($"{n.Name}!BB{min}:BB{max}", $"{firstxSeries}!A{min}:A{max}");
+                        series1.Header = n.Name;
+                    });
+                    visitRankc.Title.Text = "رتبه تعداد پست در سهام یاب_3";
 
 
 
@@ -827,24 +976,28 @@ namespace app.Controllers
             }
         }
 
-        private void ReCorrectionOutOfRangeValue(ExcelWorksheet sheet, int min, int max, string v)
+        private void ReCorrectionOutOfRangeValue(ExcelWorksheet sheet, int min, int max, string copyResultColumnName)
         {
             float sum = 0;
+            int includeSumCount = 0;
             for (int i = min; i <= max; i++)
             {
                 var data = sheet.Cells[$"X{i}"].Value;
                 if (data != null)
+                {
                     sum += float.Parse(data.ToString());
+                    includeSumCount++;
+                }
             }
-            var avr = sum / (max - min);
+            var avr = sum / includeSumCount;
 
             for (int i = min; i <= max; i++)
             {
                 var val = sheet.Cells[$"X{i}"].Value;
                 if (val == null || float.Parse(val.ToString()) + 150 < avr || float.Parse(val.ToString()) - 150 > avr)
-                    sheet.Cells[$"BB{i}"].Value = 300 - avr;
+                    sheet.Cells[$"{copyResultColumnName}{i}"].Value = 300 - avr;
                 else
-                    sheet.Cells[$"BB{i}"].Value = 300 - float.Parse( val.ToString());
+                    sheet.Cells[$"{copyResultColumnName}{i}"].Value = 300 - float.Parse( val.ToString());
 
             }
         }
