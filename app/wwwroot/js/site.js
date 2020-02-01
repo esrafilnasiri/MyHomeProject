@@ -72,6 +72,16 @@ $('#btncharts').on('click', function (e) {
                     plotOptions: data.maxZarar3Day.plotOptions,
                     series: data.maxZarar3Day.series,
                 });
+
+                Highcharts.chart('maxZarar7day', {
+                    title: data.maxZarar7Day.title,
+                    subtitle: data.maxZarar7Daysubtitle,
+                    yAxis: data.maxZarar7Day.yAxis,
+                    xAxis: data.maxZarar7Day.xAxis,
+                    legend: data.maxZarar7Day.legend,
+                    plotOptions: data.maxZarar7Day.plotOptions,
+                    series: data.maxZarar7Day.series,
+                });
             } else {
                 alert(data.message);
             }

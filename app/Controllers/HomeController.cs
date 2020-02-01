@@ -388,6 +388,9 @@ namespace app.Controllers
                 var seriesMaxZarar3DayList = new List<app.Helper.Series>();
                 var xAxisMaxZarar3Day = new app.Helper.XAxis();
 
+                var seriesMaxZarar7DayList = new List<app.Helper.Series>();
+                var xAxisMaxZarar7Day = new app.Helper.XAxis();
+
                 using (ExcelPackage result = new ExcelPackage(fileResult))
                 {
                     var mainChart = result.Workbook.Worksheets.Where(n => n.Name == "Charts").FirstOrDefault();
@@ -474,6 +477,8 @@ namespace app.Controllers
                                                     .OrderBy(n => n.Cells[$"BC{n.Dimension.Rows}"], excelObjectCompare)
                                                     .ToList().Take(20);
 
+
+
                     seriesOrder = 1;
                     orderedMaxZarar3Day.ToList().ForEach(n =>
                     {
@@ -487,6 +492,34 @@ namespace app.Controllers
                                 xAxisMaxZarar3Day.categories.Add(n.Cells[$"A{i}"].Value.ToString());
                         }
                         seriesMaxZarar3DayList.Add(new app.Helper.Series()
+                        {
+                            name = n.Name,
+                            data = data,
+                            visible = seriesOrder < 4,
+                        });
+                        seriesOrder++;
+                    });
+
+
+                    var orderedMaxZarar7Day = result.Workbook.Worksheets
+                                        .Where(n => n.Name != "Charts")
+                                        .Where(n => n.Cells[$"BD{n.Dimension.Rows}"] != null && n.Cells[$"BD{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BD{n.Dimension.Rows}"].Value < 3000)
+                                        .OrderBy(n => n.Cells[$"BD{n.Dimension.Rows}"], excelObjectCompare)
+                                        .ToList().Take(20);
+
+                    seriesOrder = 1;
+                    orderedMaxZarar7Day.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = max - 7;
+                        var data = new List<object>();
+                        for (int i = min; i <= max; i++)
+                        {
+                            data.Add(n.Cells[$"BD{i}"].Value);
+                            if (seriesOrder == 1)
+                                xAxisMaxZarar7Day.categories.Add(n.Cells[$"A{i}"].Value.ToString());
+                        }
+                        seriesMaxZarar7DayList.Add(new app.Helper.Series()
                         {
                             name = n.Name,
                             data = data,
@@ -518,8 +551,20 @@ namespace app.Controllers
                     xAxis = xAxisMaxZarar3Day
                 };
 
+
+                var maxZarar7Day = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "بیشترین ضرر ۷ روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxZarar7DayList,
+                    xAxis = xAxisMaxZarar7Day
+                };
+
                 //this.DoCreateChart();
-                return Json(new { Success = true, ChartData = newChart , maxZarar3Day });
+                return Json(new { Success = true, ChartData = newChart , maxZarar3Day, maxZarar7Day });
             }
             catch (Exception ex)
             {
