@@ -23,6 +23,7 @@ namespace app.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private string excelFilePath = app.Startup.Configuration.GetSection("MyAppConfig").GetSection("ExcelFilePath").Value;
 
         public HomeController(ILogger<HomeController> logger)
         {
@@ -55,8 +56,7 @@ namespace app.Controllers
 
                 using (ExcelPackage marketExcel = new ExcelPackage(stream))
                 {
-                    string exResult = "marketResult.xlsx";
-                    FileInfo fileResult = new FileInfo(exResult);
+                    FileInfo fileResult = new FileInfo(this.excelFilePath);
                     using (ExcelPackage result = new ExcelPackage(fileResult))
                     {
                         var mainSheet = marketExcel.Workbook.Worksheets.Where(n => n.Name == "دیده بان بازار").FirstOrDefault();
@@ -150,8 +150,7 @@ namespace app.Controllers
 
         public async Task<IActionResult> FromSahamyab(string Option)
         {
-            string exResult = "marketResult.xlsx";
-            FileInfo fileResult = new FileInfo(exResult);
+            FileInfo fileResult = new FileInfo(this.excelFilePath);
             using (ExcelPackage result = new ExcelPackage(fileResult))
             {
                 foreach (var resultSheet in result.Workbook.Worksheets)
@@ -224,8 +223,7 @@ namespace app.Controllers
 
                 using (ExcelPackage marketExcel = new ExcelPackage(stream))
                 {
-                    string exResult = "marketResult.xlsx";
-                    FileInfo fileResult = new FileInfo(exResult);
+                    FileInfo fileResult = new FileInfo(this.excelFilePath);
                     using (ExcelPackage result = new ExcelPackage(fileResult))
                     {
                         var mainSheet = marketExcel.Workbook.Worksheets.Where(n => n.Name == "دیده بان بازار").FirstOrDefault();
@@ -355,8 +353,7 @@ namespace app.Controllers
 
         private void DoRebuildData()
         {
-            string exResult = "marketResult.xlsx";
-            FileInfo fileResult = new FileInfo(exResult);
+            FileInfo fileResult = new FileInfo(this.excelFilePath);
 
             using (ExcelPackage result = new ExcelPackage(fileResult))
             {
@@ -380,8 +377,7 @@ namespace app.Controllers
         {
             try
             {
-                string exResult = "marketResult.xlsx";
-                FileInfo fileResult = new FileInfo(exResult);
+                FileInfo fileResult = new FileInfo(this.excelFilePath);
                 var seriesPostCountList = new List<app.Helper.Series>();
                 var xAxisPostCount = new app.Helper.XAxis();
 
@@ -603,9 +599,8 @@ namespace app.Controllers
 
 
             string sFileName = @"MarketWatchPlus.xlsx";
-            string exResult = "marketResult.xlsx";
             FileInfo file = new FileInfo(sFileName);
-            FileInfo fileResult = new FileInfo(exResult);
+            FileInfo fileResult = new FileInfo(this.excelFilePath);
 
 
             using (ExcelPackage marketExcel = new ExcelPackage(file))
@@ -805,8 +800,7 @@ namespace app.Controllers
         {
             try
             {
-                string exResult = "marketResult.xlsx";
-                FileInfo fileResult = new FileInfo(exResult);
+                FileInfo fileResult = new FileInfo(this.excelFilePath);
 
                 using (ExcelPackage result = new ExcelPackage(fileResult))
                 {
