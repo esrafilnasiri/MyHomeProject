@@ -19,12 +19,14 @@ namespace OnlineCheck
 {
     public partial class Form1 : Form
     {
+        public static Dictionary<string, string> marketNamesMax7DayZarar = new Dictionary<string, string>();
+        public static Dictionary<string, string> marketNamesId = new Dictionary<string, string>();
         public Form1()
         {
             InitializeComponent();
         }
 
-        private async void btnOnlineCheck_Click(object sender, EventArgs e)
+        private void BtnOnlineCheck_Click(object sender, EventArgs e)
         {
             textBox1.Text = "";
             try
@@ -77,7 +79,7 @@ namespace OnlineCheck
                                     float lastDayDarsad = float.Parse((localResultSheet.Cells[$"L{localResultRowCount}"].Value ?? "0").ToString());
                                     if (lastDayDarsad < -1 && currentDarsad > 3 && currentPayani > 1)
                                     {
-                                        textBox1.Text += $"{marketName}     {currentDarsad}     {currentPayani}     دیروز:{lastDayDarsad}" +Environment.NewLine;
+                                        textBox1.Text += $"{marketName}     {currentDarsad}     {currentPayani}     دیروز:{lastDayDarsad}" + Environment.NewLine;
                                     }
                                 }
                             }
@@ -96,6 +98,93 @@ namespace OnlineCheck
             var d = DateTime.Now.AddDays(0);
             PersianCalendar pc = new PersianCalendar();
             return string.Format("{0}/{1}/{2}", pc.GetYear(d), pc.GetMonth(d).ToString().PadLeft(2, '0'), pc.GetDayOfMonth(d).ToString().PadLeft(2, '0'));
+        }
+
+        private void btnOnlineCheckMaxZarar_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string exResult = @"N:\Bourse\marketResult.xlsx";
+                ExcelObjectCompare excelObjectCompare = new ExcelObjectCompare();
+                FileInfo fileResult = new FileInfo(exResult);
+                marketNamesMax7DayZarar = new Dictionary<string, string>();
+
+                //var handler = new HttpClientHandler();
+                //handler.AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip;
+                var client = new WebClient();
+                client.Headers[HttpRequestHeader.AcceptEncoding] = "gzip";
+                client.Encoding = Encoding.Unicode;
+
+                using (ExcelPackage result = new ExcelPackage(fileResult))
+                {
+                    //var orderedMaxZarar3Day = result.Workbook.Worksheets
+                    //                                .Where(n => n.Name != "Charts")
+                    //                                .Where(n => n.Cells[$"BC{n.Dimension.Rows}"] != null && n.Cells[$"BC{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BC{n.Dimension.Rows}"].Value < 3000)
+                    //                                .OrderBy(n => n.Cells[$"BC{n.Dimension.Rows}"], excelObjectCompare)
+                    //                                .ToList().Take(20);
+
+
+
+                    var orderedMaxZarar7Day = result.Workbook.Worksheets
+                                        .Where(n => n.Name != "Charts")
+                                        .Where(n => n.Cells[$"BD{n.Dimension.Rows}"] != null && n.Cells[$"BD{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BD{n.Dimension.Rows}"].Value < 3000)
+                                        .OrderBy(n => n.Cells[$"BD{n.Dimension.Rows}"], excelObjectCompare)
+                                        .ToList().Take(20);
+                    orderedMaxZarar7Day.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = max - 7;
+                        var data = new List<object>();
+                        //! L ==> درصد پایانی دیروز
+
+                        client.Headers[HttpRequestHeader.AcceptEncoding] = "gzip, deflate";
+                        client.Encoding = Encoding.Unicode;
+                        string searchMarketURL = $"http://tsetmc.com/tsev2/data/search.aspx?skey={n.Name}";
+                        var findNameResult = client.DownloadString(searchMarketURL);
+                        var findedItems = findNameResult.Split(';');
+                        var marketId = findedItems.Where(m => m.Split(',')[0] == n.Name).Select(m => m.Split(',')[2]).First().ToString();
+
+                        marketNamesMax7DayZarar[n.Name] = n.Cells[$"L{max}"].Value.ToString();
+                        marketNamesId[n.Name] = marketId;
+                    });
+                }
+
+                System.Threading.Tasks.Task.Factory.StartNew(AtMomentCheck);
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+        static void AtMomentCheck()
+        {
+            foreach (var marketName in marketNamesMax7DayZarar.Keys)
+            {
+                var lastDayPayanyDarsad = float.Parse(marketNamesMax7DayZarar[marketName]);
+                var marketId = marketNamesId[marketName];
+
+                var client = new WebClient();
+                string marketOnlineInfoUrl = $"http://www.tsetmc.com/tsev2/data/instinfodata.aspx?i={marketId}&c=41+";
+                var marketOnlineInfo = client.DownloadString(marketOnlineInfoUrl);
+                var marketOnlineSplitInfo = marketOnlineInfo.Split(';');
+                var hogogiInfo = marketOnlineSplitInfo[4].Split(',');
+                if (hogogiInfo.Length == 10)
+                {
+                    var hogogiSeal = hogogiInfo[4];
+                    var hogogiBay = hogogiInfo[1];
+                    var hagigiBay = hogogiInfo[0];
+                    var hagigiSeal = hogogiInfo[3];
+                    var mainInfo = marketOnlineSplitInfo[0].Split(',');
+                    var hagmKol = mainInfo[9];
+                    var mablagKol = mainInfo[10];
+                }
+                else
+                {
+
+
+                }
+            }
         }
     }
 }
