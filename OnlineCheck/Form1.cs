@@ -175,12 +175,14 @@ namespace OnlineCheck
             var marketOnlineInfo = await client.GetStringAsync(marketOnlineInfoUrl);
             var marketOnlineSplitInfo = marketOnlineInfo.Split(';');
             var currentInfos = marketOnlineSplitInfo[0].Split(',');
-            if (currentInfos[1].Trim() != "IS" && currentInfos[1].Trim() != "I")
+            //! AR مجاز-محفوظ -- بعد از مچ شدن همون موقع شروع به ادامه خرید میکنه
+            if (currentInfos[1].Trim() != "IS" && currentInfos[1].Trim() != "I" && currentInfos[1].Trim() != "AR")
             {
                 sockets.ForEach(n => n.Send("By"));
                 MessageBox.Show("End");
                 return "End";
             }
+            textBox1.Text += currentInfos[1].Trim() + ":" + DateTime.Now.ToString("mm:ss")+",";
             var hogogiInfo = marketOnlineSplitInfo[4].Split(',');
             if (hogogiInfo.Length == 10)
             {
