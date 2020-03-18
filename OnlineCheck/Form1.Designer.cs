@@ -33,6 +33,7 @@
             this.btnOnlineCheckMaxZarar = new System.Windows.Forms.Button();
             this.btnOneMaket = new System.Windows.Forms.Button();
             this.txtMarketId = new System.Windows.Forms.TextBox();
+            this.btnSellOnSafRikht = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // btnOnlineCheck
@@ -49,10 +50,10 @@
             // textBox1
             // 
             this.textBox1.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.textBox1.Location = new System.Drawing.Point(12, 41);
+            this.textBox1.Location = new System.Drawing.Point(12, 72);
             this.textBox1.Multiline = true;
             this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(697, 320);
+            this.textBox1.Size = new System.Drawing.Size(697, 289);
             this.textBox1.TabIndex = 1;
             // 
             // btnOnlineCheckMaxZarar
@@ -80,17 +81,29 @@
             // txtMarketId
             // 
             this.txtMarketId.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.txtMarketId.Location = new System.Drawing.Point(283, 13);
+            this.txtMarketId.Location = new System.Drawing.Point(472, 12);
             this.txtMarketId.Name = "txtMarketId";
             this.txtMarketId.Size = new System.Drawing.Size(227, 21);
             this.txtMarketId.TabIndex = 4;
             this.txtMarketId.Text = "29974853866926823";
+            // 
+            // btnSellOnSafRikht
+            // 
+            this.btnSellOnSafRikht.Font = new System.Drawing.Font("Tahoma", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btnSellOnSafRikht.Location = new System.Drawing.Point(12, 41);
+            this.btnSellOnSafRikht.Name = "btnSellOnSafRikht";
+            this.btnSellOnSafRikht.Size = new System.Drawing.Size(135, 23);
+            this.btnSellOnSafRikht.TabIndex = 5;
+            this.btnSellOnSafRikht.Text = "خرید در صورت ریختن صف";
+            this.btnSellOnSafRikht.UseVisualStyleBackColor = true;
+            this.btnSellOnSafRikht.Click += new System.EventHandler(this.btnSellOnSafRikht_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(721, 373);
+            this.Controls.Add(this.btnSellOnSafRikht);
             this.Controls.Add(this.txtMarketId);
             this.Controls.Add(this.btnOneMaket);
             this.Controls.Add(this.btnOnlineCheckMaxZarar);
@@ -111,6 +124,7 @@
         private System.Windows.Forms.Button btnOnlineCheckMaxZarar;
         private System.Windows.Forms.Button btnOneMaket;
         private System.Windows.Forms.TextBox txtMarketId;
+        private System.Windows.Forms.Button btnSellOnSafRikht;
     }
 }
 

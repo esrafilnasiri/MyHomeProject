@@ -160,7 +160,7 @@ namespace OnlineCheck
             }
         }
 
-        private async Task<string> AtMomentCheck(string marketid)
+        private async Task<string> AtMomentCheck(string marketid, string wantedStatus)
         {
             //foreach (var marketName in marketNamesMax7DayZarar.Keys)
             //{
@@ -175,14 +175,33 @@ namespace OnlineCheck
             var marketOnlineInfo = await client.GetStringAsync(marketOnlineInfoUrl);
             var marketOnlineSplitInfo = marketOnlineInfo.Split(';');
             var currentInfos = marketOnlineSplitInfo[0].Split(',');
-            //! AR مجاز-محفوظ -- بعد از مچ شدن همون موقع شروع به ادامه خرید میکنه
-            if (currentInfos[1].Trim() != "IS" && currentInfos[1].Trim() != "I" && currentInfos[1].Trim() != "AR")
+            if (string.IsNullOrEmpty(wantedStatus))
             {
-                sockets.ForEach(n => n.Send("By"));
-                MessageBox.Show("End");
-                return "End";
+                //! AR مجاز-محفوظ -- بعد از مچ شدن همون موقع شروع به ادامه خرید میکنه
+                if (currentInfos[1].Trim() != "IS" && currentInfos[1].Trim() != "I" && currentInfos[1].Trim() != "AR")
+                {
+                    sockets.ForEach(n => n.Send("By"));
+                    MessageBox.Show("End");
+                    return "End";
+                }
+                textBox1.Text += currentInfos[1].Trim() + ":" + DateTime.Now.ToString("mm:ss") + ",";
             }
-            textBox1.Text += currentInfos[1].Trim() + ":" + DateTime.Now.ToString("mm:ss")+",";
+            else if (wantedStatus == "CheckRizeshSaf")
+            {
+                var karidoforosh = marketOnlineSplitInfo[2].Split('@');
+                var forosh = karidoforosh[4];
+                //! یک میلیون
+                //! باید از ورودی خوانده شود
+                if (int.Parse(forosh) < 1000000)
+                {
+                    sockets.ForEach(n => n.Send("OneBy"));
+                    MessageBox.Show("End");
+                    return "End";
+                }
+                textBox1.Text += DateTime.Now.ToString("mm:ss") + "==> " + forosh + ", ";
+            }
+
+
             var hogogiInfo = marketOnlineSplitInfo[4].Split(',');
             if (hogogiInfo.Length == 10)
             {
@@ -210,7 +229,7 @@ namespace OnlineCheck
             {
                 try
                 {
-                    res = await AtMomentCheck(txtMarketId.Text);
+                    res = await AtMomentCheck(txtMarketId.Text, "");
                     System.Threading.Thread.Sleep(1000);
                 }
                 catch (Exception)
@@ -286,6 +305,26 @@ namespace OnlineCheck
             {
                 LoadServer();
             }).Start();
+        }
+
+        private async void btnSellOnSafRikht_Click(object sender, EventArgs e)
+        {
+            var res = string.Empty;
+            do
+            {
+                try
+                {
+                    res = await AtMomentCheck(txtMarketId.Text, "CheckRizeshSaf");
+                    System.Threading.Thread.Sleep(2000);
+                }
+                catch (Exception)
+                {
+                    System.Threading.Thread.Sleep(2*1000*5);
+                    //sockets.ForEach(n => n.Send("ByOne"));
+                    //System.Threading.Thread.Sleep(100);
+                }
+            } while (res != "End");
+            //sockets.ForEach(n => n.Send("By"));
         }
     }
 }
