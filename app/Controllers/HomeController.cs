@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -387,6 +387,28 @@ namespace app.Controllers
                 var seriesMaxZarar7DayList = new List<app.Helper.Series>();
                 var xAxisMaxZarar7Day = new app.Helper.XAxis();
 
+                var seriesMaxZarar14DayList = new List<app.Helper.Series>();
+                var xAxisMaxZarar14Day = new app.Helper.XAxis();
+
+                var seriesMaxZarar30DayList = new List<app.Helper.Series>();
+                var xAxisMaxZarar30Day = new app.Helper.XAxis();
+                var seriesMaxZarar30DaySabeList = new List<app.Helper.Series>();
+                var xAxisMaxZarar30DaySabe = new app.Helper.XAxis();
+
+                var seriesMaxSood3DayList = new List<app.Helper.Series>();
+                var xAxisMaxSood3Day = new app.Helper.XAxis();
+
+                var seriesMaxSood7DayList = new List<app.Helper.Series>();
+                var xAxisMaxSood7Day = new app.Helper.XAxis();
+
+                var seriesMaxSood14DayList = new List<app.Helper.Series>();
+                var xAxisMaxSood14Day = new app.Helper.XAxis();
+
+                var seriesMaxSood30DayList = new List<app.Helper.Series>();
+                var xAxisMaxSood30Day = new app.Helper.XAxis();
+                var seriesMaxSood30DaySabeList = new List<app.Helper.Series>();
+                var xAxisMaxSood30DaySabe = new app.Helper.XAxis();
+
                 using (ExcelPackage result = new ExcelPackage(fileResult))
                 {
                     var mainChart = result.Workbook.Worksheets.Where(n => n.Name == "Charts").FirstOrDefault();
@@ -428,6 +450,7 @@ namespace app.Controllers
                         seriesOrder++;
                     });
 
+<<<<<<< HEAD
                     if (!chartBuilded)
                     {
                         Double tryCast = 0;
@@ -471,6 +494,49 @@ namespace app.Controllers
                                        });
                         result.Save();
                     }
+=======
+                    Double tryCast = 0;
+                    result.Workbook.Worksheets
+                                   .Where(n => n.Name != "Charts")
+                                   //.Where(n=>n.Name=="پارتا")
+                                   .ToList().ForEach(itemSheet =>
+                                   {
+                                       double mainScore90 = 100;
+                                       double mainScore60 = 100;
+                                       double mainScore30 = 100;
+                                       double mainScore14 = 100;
+                                       double mainScore7 = 100;
+                                       double mainScore3 = 100;
+                                       int sheetRowCount = itemSheet.Dimension.Rows;
+                                       int fromRow = Math.Min(90, itemSheet.Dimension.Rows)-2;
+                                       for (int i = fromRow; i >= 0; i--)
+                                       {
+                                           if (itemSheet.Cells[$"L{sheetRowCount - i}"]!=null && itemSheet.Cells[$"L{sheetRowCount - i}"].Value != null && double.TryParse(itemSheet.Cells[$"L{sheetRowCount - i}"].Value.ToString(), out tryCast))
+                                           {
+                                               var darsad = double.Parse(itemSheet.Cells[$"L{sheetRowCount - i}"].Value.ToString());
+                                               if (i < 3)
+                                                   mainScore3 += (mainScore3 * darsad) / 100;
+                                               if (i < 7)
+                                                   mainScore7 += (mainScore7 * darsad) / 100;
+                                               if (i < 14)
+                                                   mainScore14 += (mainScore14 * darsad) / 100;
+                                               if (i < 30)
+                                                   mainScore30 += (mainScore30 * darsad) / 100;
+                                               if (i < 60)
+                                                   mainScore60 += (mainScore60 * darsad) / 100;
+                                               if (i < 90)
+                                                   mainScore90 += (mainScore90 * darsad) / 100;
+                                           }
+                                       }
+                                       itemSheet.Cells[$"BC{sheetRowCount}"].Value = ((mainScore3 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BD{sheetRowCount}"].Value = ((mainScore7 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BE{sheetRowCount}"].Value = ((mainScore14 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BF{sheetRowCount}"].Value = ((mainScore30 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BG{sheetRowCount}"].Value = ((mainScore60 / 100) - 1) * 100;
+                                       itemSheet.Cells[$"BH{sheetRowCount}"].Value = ((mainScore90 / 100) - 1) * 100;
+                                   });
+                    result.Save();
+>>>>>>> 2a5174e... 3/12
 
                     var orderedMaxZarar3Day = result.Workbook.Worksheets
                                                     .Where(n => n.Name != "Charts")
@@ -505,6 +571,39 @@ namespace app.Controllers
                     });
 
 
+                    var orderedMaxSood3Day = result.Workbook.Worksheets
+                                                    .Where(n => n.Name != "Charts")
+                                                    .Where(n => n.Cells[$"BC{n.Dimension.Rows}"] != null && n.Cells[$"BC{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BC{n.Dimension.Rows}"].Value < 3000)
+                                                    .OrderByDescending(n => n.Cells[$"BC{n.Dimension.Rows}"], excelObjectCompare)
+                                                    .ToList().Take(20);
+
+
+
+                    seriesOrder = 1;
+                    orderedMaxSood3Day.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = max - 3;
+                        if (min > 2)
+                        {
+                            var data = new List<object>();
+                            for (int i = min; i <= max; i++)
+                            {
+                                data.Add(n.Cells[$"BC{i}"].Value);
+                                if (seriesOrder == 1)
+                                    xAxisMaxSood3Day.categories.Add(n.Cells[$"A{i}"].Value.ToString());
+                            }
+                            seriesMaxSood3DayList.Add(new app.Helper.Series()
+                            {
+                                name = n.Name,
+                                data = data,
+                                visible = seriesOrder < 4,
+                            });
+                            seriesOrder++;
+                        }
+                    });
+
+
                     var orderedMaxZarar7Day = result.Workbook.Worksheets
                                         .Where(n => n.Name != "Charts")
                                         .Where(n => n.Cells[$"BD{n.Dimension.Rows}"] != null && n.Cells[$"BD{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BD{n.Dimension.Rows}"].Value < 3000)
@@ -533,6 +632,190 @@ namespace app.Controllers
                             });
                         }
                         seriesOrder++;
+                    });
+
+
+                    var orderedMaxSood7Day = result.Workbook.Worksheets
+                                        .Where(n => n.Name != "Charts")
+                                        .Where(n => n.Cells[$"BD{n.Dimension.Rows}"] != null && n.Cells[$"BD{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BD{n.Dimension.Rows}"].Value < 3000)
+                                        .OrderByDescending(n => n.Cells[$"BD{n.Dimension.Rows}"], excelObjectCompare)
+                                        .ToList().Take(20);
+
+                    seriesOrder = 1;
+                    orderedMaxSood7Day.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = max - 7;
+                        if (min > 2)
+                        {
+                            var data = new List<object>();
+                            for (int i = min; i <= max; i++)
+                            {
+                                data.Add(n.Cells[$"BD{i}"].Value);
+                                if (seriesOrder == 1)
+                                    xAxisMaxSood7Day.categories.Add(n.Cells[$"A{i}"].Value.ToString());
+                            }
+                            seriesMaxSood7DayList.Add(new app.Helper.Series()
+                            {
+                                name = n.Name,
+                                data = data,
+                                visible = seriesOrder < 4,
+                            });
+                            seriesOrder++;
+                        }
+                    });
+
+
+                    seriesOrder = 1;
+                    var orderedMaxZarar14Day = result.Workbook.Worksheets
+                        .Where(n => n.Name != "Charts")
+                        .Where(n => n.Cells[$"BE{n.Dimension.Rows}"] != null && n.Cells[$"BE{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BE{n.Dimension.Rows}"].Value < 3000)
+                        .OrderBy(n => n.Cells[$"BE{n.Dimension.Rows}"], excelObjectCompare)
+                        .ToList().Take(20);
+
+                    seriesOrder = 1;
+                    orderedMaxZarar14Day.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = max - 14;
+                        if (min > 2)
+                        {
+                            var data = new List<object>();
+                            for (int i = min; i <= max; i++)
+                            {
+                                data.Add(n.Cells[$"BE{i}"].Value);
+                                if (seriesOrder == 1)
+                                    xAxisMaxZarar14Day.categories.Add(n.Cells[$"A{i}"].Value.ToString());
+                            }
+                            seriesMaxZarar14DayList.Add(new app.Helper.Series()
+                            {
+                                name = n.Name,
+                                data = data,
+                                visible = seriesOrder < 4,
+                            });
+                            seriesOrder++;
+                        }
+                    });
+
+                    seriesOrder = 1;
+                    var orderedMaxSood14Day = result.Workbook.Worksheets
+                        .Where(n => n.Name != "Charts")
+                        .Where(n => n.Cells[$"BE{n.Dimension.Rows}"] != null && n.Cells[$"BE{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BE{n.Dimension.Rows}"].Value < 3000)
+                        .OrderByDescending(n => n.Cells[$"BE{n.Dimension.Rows}"], excelObjectCompare)
+                        .ToList().Take(20);
+
+                    seriesOrder = 1;
+                    orderedMaxSood14Day.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = max - 14;
+                        if (min > 2)
+                        {
+                            var data = new List<object>();
+                            for (int i = min; i <= max; i++)
+                            {
+                                data.Add(n.Cells[$"BE{i}"].Value);
+                                if (seriesOrder == 1)
+                                    xAxisMaxSood14Day.categories.Add(n.Cells[$"A{i}"].Value.ToString());
+                            }
+                            seriesMaxSood14DayList.Add(new app.Helper.Series()
+                            {
+                                name = n.Name,
+                                data = data,
+                                visible = seriesOrder < 4,
+                            });
+                            seriesOrder++;
+                        }
+                    });
+
+
+                    seriesOrder = 1;
+                    var orderedMaxZarar30Day = result.Workbook.Worksheets
+                        .Where(n => n.Name != "Charts")
+                        .Where(n => n.Cells[$"BF{n.Dimension.Rows}"] != null && n.Cells[$"BF{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BF{n.Dimension.Rows}"].Value < 3000)
+                        .OrderBy(n => n.Cells[$"BF{n.Dimension.Rows}"], excelObjectCompare)
+                        .ToList().Take(20);
+
+                    seriesOrder = 1;
+                    orderedMaxZarar30Day.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = max - 30;
+                        if (min > 2)
+                        {
+                            var data = new List<object>();
+                            var dataSabe = new List<object>();
+                            for (int i = 2; i <= max; i++)
+                            {
+                                if (i >= min)
+                                {
+                                    data.Add(n.Cells[$"BF{i}"].Value);
+                                    if (seriesOrder == 1)
+                                        xAxisMaxZarar30Day.categories.Add(n.Cells[$"A{i}"].Value.ToString());
+                                }
+                                if (seriesOrder == 1)
+                                    xAxisMaxZarar30DaySabe.categories.Add((n.Cells[$"A{i}"].Value??"").ToString());
+                                dataSabe.Add(n.Cells[$"BF{i}"].Value);
+                            }
+                            seriesMaxZarar30DayList.Add(new app.Helper.Series()
+                            {
+                                name = n.Name,
+                                data = data,
+                                visible = seriesOrder < 4,
+                            });
+                            seriesMaxZarar30DaySabeList.Add(new app.Helper.Series()
+                            {
+                                name = n.Name,
+                                data = data,
+                                visible = seriesOrder < 4,
+                            });
+                            seriesOrder++;
+                        }
+                    });
+
+                    seriesOrder = 1;
+                    var orderedMaxSood30Day = result.Workbook.Worksheets
+                        .Where(n => n.Name != "Charts")
+                        //.Where(n=>n.Name=="وصنا")
+                        .Where(n => n.Cells[$"BF{n.Dimension.Rows}"] != null && n.Cells[$"BF{n.Dimension.Rows}"].Value != null && (double)n.Cells[$"BF{n.Dimension.Rows}"].Value < 3000)
+                        .OrderByDescending(n => n.Cells[$"BF{n.Dimension.Rows}"], excelObjectCompare)
+                        .ToList().Take(600);
+
+                    seriesOrder = 1;
+                    orderedMaxSood30Day.ToList().ForEach(n =>
+                    {
+                        int max = n.Dimension.Rows;
+                        int min = max - 30;
+                        if (min > 2)
+                        {
+                            var data = new List<object>();
+                            var dataSabe = new List<object>();
+                            for (int i = 2; i <= max; i++)
+                            {
+                                if (i >= min && seriesOrder <30)
+                                {
+                                    data.Add(n.Cells[$"BF{i}"].Value);
+                                    if (seriesOrder == 1)
+                                        xAxisMaxSood30Day.categories.Add((n.Cells[$"A{i}"].Value??"").ToString());
+                                }
+                                dataSabe.Add(n.Cells[$"BF{i}"].Value);
+                                if (seriesOrder == 2)
+                                    xAxisMaxSood30DaySabe.categories.Add((n.Cells[$"A{i}"].Value??"").ToString());
+                            }
+                            seriesMaxSood30DayList.Add(new app.Helper.Series()
+                            {
+                                name = n.Name,
+                                data = data,
+                                visible = seriesOrder < 4,
+                            });
+                            seriesMaxSood30DaySabeList.Add(new app.Helper.Series()
+                            {
+                                name = n.Name,
+                                data = dataSabe,
+                                visible = seriesOrder < 4,
+                            });
+                            seriesOrder++;
+                        }
                     });
                 }
 
@@ -570,8 +853,103 @@ namespace app.Controllers
                     xAxis = xAxisMaxZarar7Day
                 };
 
+                var maxZarar14Day = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "بیشترین ضرر 14 روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxZarar14DayList,
+                    xAxis = xAxisMaxZarar14Day
+                };
+
+                var maxZarar30Day = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "بیشترین ضرر 30 روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxZarar30DayList,
+                    xAxis = xAxisMaxZarar30Day
+                };
+
+                var maxZarar30DaySabe = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "سابقه بیشترین ضرر 30 روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxZarar30DaySabeList,
+                    xAxis = xAxisMaxZarar30DaySabe
+                };
+
+                var maxSood3Day = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "بیشترین سود ۳ روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxSood3DayList,
+                    xAxis = xAxisMaxSood3Day
+                };
+
+
+                var maxSood7Day = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "بیشترین سود ۷ روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxSood7DayList,
+                    xAxis = xAxisMaxSood7Day
+                };
+
+                var maxSood14Day = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "بیشترین سود 14 روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxSood14DayList,
+                    xAxis = xAxisMaxSood14Day
+                };
+
+                var maxSood30Day = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "بیشترین سود 30 روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxSood30DayList,
+                    xAxis = xAxisMaxSood30Day
+                };
+
+                var maxSood30DaySabe = new app.Helper.HighChart()
+                {
+                    title = new Helper.HTitle() { text = "سابقه بیشترین سود 30 روزه" },
+                    subtitle = new Helper.HTitle() { text = "" },
+                    yAxis = new Helper.YAxis() { title = new Helper.HTitle() { text = "ضرر تجمعی" } },
+                    legend = new Helper.Legend() { align = "right", layout = "vertical", verticalAlign = "middle" },
+                    plotOptions = new Helper.PlotOptions() { series = new Helper.PlotOptionsSeries() { label = new Helper.PlotOptionsSeriesLabel() { connectorAllowed = false } } },
+                    series = seriesMaxSood30DaySabeList,
+                    xAxis = xAxisMaxSood30DaySabe
+                };
+
+
+
                 //this.DoCreateChart();
+<<<<<<< HEAD
                 return Json(new { Success = true, ChartData = newChart, maxZarar3Day, maxZarar7Day });
+=======
+                return Json(new { Success = true, ChartData = newChart , maxZarar3Day, maxZarar7Day , maxZarar14Day , maxZarar30Day, maxZarar30DaySabe, maxSood3Day, maxSood7Day, maxSood14Day, maxSood30Day, maxSood30DaySabe });
+>>>>>>> 2a5174e... 3/12
             }
             catch (Exception ex)
             {
