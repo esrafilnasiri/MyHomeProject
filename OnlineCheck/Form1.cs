@@ -177,14 +177,17 @@ namespace OnlineCheck
             var currentInfos = marketOnlineSplitInfo[0].Split(',');
             if (string.IsNullOrEmpty(wantedStatus))
             {
+                string marketStatus = currentInfos[1].Trim();
                 //! AR مجاز-محفوظ -- بعد از مچ شدن همون موقع شروع به ادامه خرید میکنه
-                if (currentInfos[1].Trim() != "IS" && currentInfos[1].Trim() != "I" && currentInfos[1].Trim() != "AR")
+                //! IS متوقف- ممنوع-- هنوز ارسال سفارش نشده است وبعد از آن مجاز محفوظ میشود
+                //if (marketStatus != "IS" && marketStatus != "I" && marketStatus != "AR")
+                if (marketStatus != "IS")
                 {
                     sockets.ForEach(n => n.Send("By"));
                     MessageBox.Show("End");
                     return "End";
                 }
-                textBox1.Text += currentInfos[1].Trim() + ":" + DateTime.Now.ToString("mm:ss") + ",";
+                textBox1.Text += marketStatus + ":" + DateTime.Now.ToString("mm:ss") + ",";
             }
             else if (wantedStatus == "CheckRizeshSaf")
             {
@@ -319,12 +322,108 @@ namespace OnlineCheck
                 }
                 catch (Exception)
                 {
-                    System.Threading.Thread.Sleep(2*1000*5);
+                    System.Threading.Thread.Sleep(2 * 1000 * 5);
                     //sockets.ForEach(n => n.Send("ByOne"));
                     //System.Threading.Thread.Sleep(100);
                 }
             } while (res != "End");
             //sockets.ForEach(n => n.Send("By"));
+        }
+
+        private async void btnStart1_Click(object sender, EventArgs e)
+        {
+            string condition = (string)drpCondition1.SelectedItem;
+            string marketId = this.txtMarketId1.Text;
+            string marketName = this.txtMarketName1.Text;
+            int count = int.Parse(this.txtCount1.Text);
+            int price = 0;
+            int.TryParse(this.txtPrice1.Text, out price);
+            int hajmSaf = int.Parse(this.txtSafHajm1.Text);
+            this.btnStart1.Enabled = false;
+            if (condition == "اگر صف خرید ریخت بفروش")
+            {
+                condition = "SellIf+SafDestroyed";
+            }
+
+            var res = string.Empty;
+            do
+            {
+                try
+                {
+                    res = await AtMomentCheckCondition(marketId, marketName, count, price, hajmSaf, condition);
+                    System.Threading.Thread.Sleep(2000);
+                }
+                catch (Exception)
+                {
+                    if (condition == "SellIf+SafDestroyed")
+                    {
+                        System.Threading.Thread.Sleep(10 * 1000);
+                    }
+                    //sockets.ForEach(n => n.Send("ByOne"));
+                    //System.Threading.Thread.Sleep(100);
+                }
+            } while (res != "End");
+            this.btnStart1.Enabled = true;
+        }
+
+        private async Task<string> AtMomentCheckCondition(string marketid, string marketName, int count, int price, int hajmSaf, string condition)
+        {
+            var handler = new HttpClientHandler
+            {
+                AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+            };
+            var client = new HttpClient(handler);
+            string marketOnlineInfoUrl = $"http://www.tsetmc.com/tsev2/data/instinfodata.aspx?i={marketid}&c=41+";
+            var marketOnlineInfo = await client.GetStringAsync(marketOnlineInfoUrl);
+            var marketOnlineSplitInfo = marketOnlineInfo.Split(';');
+            var currentInfos = marketOnlineSplitInfo[0].Split(',');
+            var safInfo = marketOnlineSplitInfo[2].Split('@');
+            if (condition == "SellIf+SafDestroyed")
+            {
+                int currenthajmSaf = int.Parse(safInfo[1].Trim());
+                if (currenthajmSaf < hajmSaf)
+                {
+                    if (price == 0)
+                        price = int.Parse(safInfo[2].Trim());
+                    sockets.ForEach(n => n.Send($"OneSell,{marketName},{count},{price}"));
+                    MessageBox.Show($"{marketName} Done");
+                    return "End";
+                }
+            }
+            else if (condition == "CheckRizeshSaf")
+            {
+                var karidoforosh = marketOnlineSplitInfo[2].Split('@');
+                var forosh = karidoforosh[4];
+                //! یک میلیون
+                //! باید از ورودی خوانده شود
+                if (int.Parse(forosh) < 1000000)
+                {
+                    sockets.ForEach(n => n.Send("OneBy"));
+                    MessageBox.Show("End");
+                    return "End";
+                }
+                textBox1.Text += DateTime.Now.ToString("mm:ss") + "==> " + forosh + ", ";
+            }
+
+
+            var hogogiInfo = marketOnlineSplitInfo[4].Split(',');
+            if (hogogiInfo.Length == 10)
+            {
+                var hogogiSeal = hogogiInfo[4];
+                var hogogiBay = hogogiInfo[1];
+                var hagigiBay = hogogiInfo[0];
+                var hagigiSeal = hogogiInfo[3];
+                var mainInfo = marketOnlineSplitInfo[0].Split(',');
+                var hagmKol = mainInfo[9];
+                var mablagKol = mainInfo[10];
+            }
+            else
+            {
+
+
+            }
+            //}
+            return null;
         }
     }
 }
